@@ -1,0 +1,8 @@
+[submodule "deps/polyscope"]
+	path = deps/polyscope
+	url = https://github.com/Pieberry-G/polyscope.git
+	branch = MeshDef
+[submodule "deps/spdlog"]
+	path = deps/spdlog
+	url = https://github.com/gabime/spdlog.git
+	branch = tags/v1.14.1
