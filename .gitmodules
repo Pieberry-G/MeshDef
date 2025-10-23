@@ -6,3 +6,7 @@
 	path = deps/spdlog
 	url = https://github.com/gabime/spdlog.git
 	branch = tags/v1.14.1
+[submodule "deps/eigen"]
+	path = deps/eigen
+	url = https://github.com/PX4/eigen.git
+	branch = 3.4
