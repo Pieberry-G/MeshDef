@@ -1,12 +1,14 @@
 #pragma once
 
-// #include "Panels/MainMenu.h"
+#include "Panel/MainMenu.h"
 // #include "Core/ResourceManager.h"
 // #include "Core/Scene.h"
 
 #include "EventSystem/ApplicationEvent.h"
 #include "EventSystem/KeyEvent.h"
 #include "EventSystem/MouseEvent.h"
+
+#include "Mesh/Model.h"
 
 namespace MeshDef {
 
@@ -27,10 +29,12 @@ namespace MeshDef {
 		static Application* Get() { return s_Instance; }
 
 	private:
-		// MainMenu m_MainMenu;
+		MainMenu m_MainMenu;
 		// ResourceManager* m_ResourceManager;
 
 		// std::unique_ptr<Scene> m_Scene;
+
+		Model* g_mesh;
 
 	private:
 		static Application* s_Instance;

@@ -1,6 +1,8 @@
 #include "Core/Application.h"
 #include "Core/EntryPoint.h"
 
+#include "Mesh/MeshUtils.h"
+
 //#include "TinyRenderer/RenderTool.h"
 //
 //#include "Mesh/SurfaceCleanerTool.h"
@@ -25,7 +27,7 @@ namespace MeshDef {
         s_Instance = this;
 
         polyscope::init();
-        polyscope::render::engine->setEventCallback(MD_BIND_EVENT_FN(Application::OnEvent));
+        //polyscope::render::engine->setEventCallback(MD_BIND_EVENT_FN(Application::OnEvent));
         //polyscope::registerGroup("Gems");
         //polyscope::registerGroup("GemSettings");
 
@@ -42,6 +44,9 @@ namespace MeshDef {
 
         //Tools::DatasetBuilder builder;
         //builder.BuildDataset();
+
+        g_mesh = loadModelFromFile("../assets/meshes/camel.obj");
+        g_mesh->DrawMesh();
     }
 
     void Application::Run()

@@ -14,6 +14,7 @@ file(GLOB_RECURSE HEADERS "include/*.h")
 add_executable(${PROJECT_TARGET} "${SRCS}" "${HEADERS}")
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_TARGET})
 target_precompile_headers(${PROJECT_TARGET} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h)
+target_compile_options(${PROJECT_TARGET} PRIVATE /bigobj)
 
 target_compile_definitions(${PROJECT_TARGET} PRIVATE MD_PLATFORM_WINDOWS)
 target_compile_definitions(${PROJECT_TARGET} PRIVATE "$<$<CONFIG:DEBUG>:MD_DEBUG>")
