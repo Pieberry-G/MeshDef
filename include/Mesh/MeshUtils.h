@@ -20,7 +20,6 @@
  * specified Mesh instance.
  */
 #include "Mesh/Model.h"
-#include "Mesh/DrawMesh.h"
 #include "Mesh/EditMesh.h"
 #include "Mesh/OBJLoader.h"
 
@@ -105,11 +104,10 @@ EditMesh *loadEditMeshFromFile(std::string file_name)
     return m;
 }
 
-Model *loadModelFromFile(std::string file_name)
+std::unique_ptr<Model> loadModelFromFile(std::string file_name)
 {
     EditMesh *em = loadEditMeshFromFile(file_name);
-    Model *m = new Model(EditMesh_ptr(em));
-    return m;
+    return std::make_unique<Model>(EditMeshPtr(em));
 }
 
 //DrawMesh *createGem(RenderState & state, float scale)

@@ -16,38 +16,49 @@ namespace MeshDef {
 
     void MainMenu::DrawMainMenu()
     {
-        if (ImGui::BeginMainMenuBar()) {
-            if (ImGui::BeginMenu("File")) {
-                if (ImGui::MenuItem("New Project...", "Ctrl+N")) {
+        if (ImGui::BeginMainMenuBar())
+        {
+            if (ImGui::BeginMenu("File"))
+            {
+                if (ImGui::MenuItem("New Project...", "Ctrl+N"))
+                {
                     //NewProject();
                 }
-                if (ImGui::MenuItem("Export...", "Ctrl+S")) {
+                if (ImGui::MenuItem("Export...", "Ctrl+S"))
+                {
                     //ExportMesh();
                 }
-                if (ImGui::MenuItem("Quit")) {
+                if (ImGui::MenuItem("Quit"))
+                {
                     WindowCloseEvent event;
                     Application::Get()->OnEvent(event);
                 }
                 ImGui::EndMenu();
             }
-            if (ImGui::BeginMenu("Themes")) {
-                if (ImGui::MenuItem("Green")) {
+            if (ImGui::BeginMenu("Themes"))
+            {
+                if (ImGui::MenuItem("Green"))
+                {
                     polyscope::options::themeColor = polyscope::ThemeColor::Green;
                     polyscope::options::configureImGuiStyleCallback();
                 }
-                else if (ImGui::MenuItem("Red")) {
+                else if (ImGui::MenuItem("Red"))
+                {
                     polyscope::options::themeColor = polyscope::ThemeColor::Red;
                     polyscope::options::configureImGuiStyleCallback();
                 }
-                else if (ImGui::MenuItem("Blue")) {
+                else if (ImGui::MenuItem("Blue"))
+                {
                     polyscope::options::themeColor = polyscope::ThemeColor::Blue;
                     polyscope::options::configureImGuiStyleCallback();
                 }
-                else if (ImGui::MenuItem("Purple")) {
+                else if (ImGui::MenuItem("Purple"))
+                {
                     polyscope::options::themeColor = polyscope::ThemeColor::Purple;
                     polyscope::options::configureImGuiStyleCallback();
                 }
-                else if (ImGui::MenuItem("Brown")) {
+                else if (ImGui::MenuItem("Brown"))
+                {
                     polyscope::options::themeColor = polyscope::ThemeColor::Brown;
                     polyscope::options::configureImGuiStyleCallback();
                 }

@@ -1,0 +1,34 @@
+#pragma once
+
+#include "Panel/CustomUI.h"
+
+#include "EventSystem/ApplicationEvent.h"
+#include "EventSystem/KeyEvent.h"
+#include "EventSystem/MouseEvent.h"
+
+#include "Mesh/Model.h"
+
+namespace MeshDef {
+
+	class Scene
+	{
+	public:
+		Scene();
+
+		void Clean();
+		bool OnKeyReleased(KeyReleasedEvent& e);
+		bool OnAppUpdate(AppUpdateEvent& e);
+		bool OnAppRender(AppRenderEvent& e);
+
+		MeshProcessUI& GetMeshProcessUI() { return m_MeshProcessUI; }
+
+	private:
+		void OnExecuteQSlim();
+
+	private:
+		std::unique_ptr<Model> m_Model;
+
+		MeshProcessUI m_MeshProcessUI;
+	};
+
+} // namespace MeshDef

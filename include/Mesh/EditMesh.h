@@ -305,8 +305,8 @@ public:
 public:
     /* get a list of all vertices/face indices in the mesh as floats in contiguous
      * memory. Used for rendering so loss of precision unimportant */
-    void get_draw_data( float *verts, int *indices ) const;
-    void get_draw_normals( float *normals ) const;
+	void get_draw_data( float *verts, int *indices ) const;
+	void get_draw_normals( float *normals ) const;
     void get_draw_selection( int *selection ) const;
 	void get_draw_colors(float *colors);
     int  get_edit_count() const;

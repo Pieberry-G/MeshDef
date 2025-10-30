@@ -2,13 +2,13 @@
 
 namespace MeshDef {
 
-Model::Model() : last_drawn(-1), m_em(NULL)
+Model::Model() : last_drawn(-1), m_EditMesh(NULL)
 {
     bboxMin.setZero();
     bboxMax.setZero();
 }
 
-Model::Model(EditMesh_ptr em) : last_drawn(-1), m_em(em)
+Model::Model(EditMeshPtr editMesh) : last_drawn(-1), m_EditMesh(editMesh)
 {
     bboxMin.setZero();
     bboxMax.setZero();
@@ -21,36 +21,31 @@ Model::~Model()
 
 void Model::init()
 {
-    if (!m_em)
-        m_em = EditMesh_ptr(new EditMesh());
-}
-
-void Model::DrawMesh()
-{
-    //if (last_drawn != m_em->get_edit_count())
-    UpdateDrawMesh();
-    AddToPolyscope();
+    if (!m_EditMesh)
+    {
+        m_EditMesh = EditMeshPtr(new EditMesh());
+    }
 }
 
 Eigen::Vector3d Model::info_vertex(std::size_t i)
 {
-	return m_em->get_vertex(i);
+	return m_EditMesh->get_vertex(i);
 }
 
 void Model::info_bbox(Eigen::Vector3d &bboxMin, Eigen::Vector3d &bboxMax)
 {
-    bboxMin = m_em->bboxMin;
-    bboxMax = m_em->bboxMax;
+    bboxMin = m_EditMesh->bboxMin;
+    bboxMax = m_EditMesh->bboxMax;
 }
 
 void Model::getIndicesForFace(size_t tri_index, size_t indicesForFace[3])
 {
-	m_em->getIndicesForFace(tri_index, indicesForFace);
+	m_EditMesh->getIndicesForFace(tri_index, indicesForFace);
 }
 
 void Model::UpdateDrawMesh()
 {
-    int i_size = 3 * m_em->get_face_size();
+    int i_size = 3 * m_EditMesh->get_face_size();
     int v_size = 3 * i_size;//m_em->get_vert_size();
 
     float *v_data = new float[v_size*2];// vertex and normal data
@@ -58,10 +53,10 @@ void Model::UpdateDrawMesh()
     int   *s_data = new int[i_size];	// selection data
 	float *c_data = new float[v_size];	// vertex colors
 
-    m_em->get_draw_data(v_data, i_data);
-    m_em->get_draw_normals(&v_data[v_size]);
-    m_em->get_draw_selection(s_data);
-	m_em->get_draw_colors(c_data);
+    m_EditMesh->get_draw_data(v_data, i_data);
+    m_EditMesh->get_draw_normals(&v_data[v_size]);
+    m_EditMesh->get_draw_selection(s_data);
+	m_EditMesh->get_draw_colors(c_data);
 
     m_Vertices.clear();
     m_Faces.clear();
@@ -85,20 +80,28 @@ void Model::UpdateDrawMesh()
     delete [] s_data;
 	delete [] c_data;
 
-    //last_drawn = m_em->get_edit_count();
+    //last_drawn = m_EditMesh->get_edit_count();
 }
 
-void Model::AddToPolyscope()
+void Model::DrawMeshToPolyscope()
 {
-    MD_CORE_ASSERT(!m_PsMesh, "Mesh has already been registered to polyscope!");
+    UpdateDrawMesh();
+
+    if (m_PsMesh)
+    {
+        m_PsMesh->remove();
+    }
 
     m_PsMesh = polyscope::registerSurfaceMesh(m_Name, m_Vertices, m_Faces);
     m_PsMesh->setTransform(m_Transform);
 }
 
-void Model::RemoveFromPolyscope()
+void Model::RemoveMeshFromPolyscope()
 {
-    MD_CORE_ASSERT(m_PsMesh, "Mesh has not been registered to polyscope!");
+    if (!m_PsMesh)
+    {
+        return;
+    }
 
     m_PsMesh->remove();
     m_PsMesh = nullptr;

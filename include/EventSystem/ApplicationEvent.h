@@ -22,7 +22,7 @@ namespace MeshDef {
 		}
 
 		EVENT_CLASS_TYPE(WindowResize)
-			EVENT_CLASS_CATEGORY(EventCategoryApplication)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 	private:
 		uint32_t m_Width, m_Height;
 	};
@@ -33,7 +33,7 @@ namespace MeshDef {
 		WindowCloseEvent() = default;
 
 		EVENT_CLASS_TYPE(WindowClose)
-			EVENT_CLASS_CATEGORY(EventCategoryApplication)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 	};
 
 	class AppTickEvent : public Event
@@ -42,16 +42,27 @@ namespace MeshDef {
 		AppTickEvent() = default;
 
 		EVENT_CLASS_TYPE(AppTick)
-			EVENT_CLASS_CATEGORY(EventCategoryApplication)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 	};
 
 	class AppUpdateEvent : public Event
 	{
 	public:
-		AppUpdateEvent() = default;
+		AppUpdateEvent(const std::string& command)
+			: m_Command(command) {}
+
+		std::string GetCommand() const { return m_Command; }
+
+		std::string ToString() const override {
+			std::stringstream ss;
+			ss << "AppUpdateEvent: " << m_Command;
+			return ss.str();
+		}
 
 		EVENT_CLASS_TYPE(AppUpdate)
-			EVENT_CLASS_CATEGORY(EventCategoryApplication)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
+	private:
+		std::string m_Command;
 	};
 
 	class AppRenderEvent : public Event
@@ -69,7 +80,7 @@ namespace MeshDef {
 		}
 
 		EVENT_CLASS_TYPE(AppRender)
-			EVENT_CLASS_CATEGORY(EventCategoryApplication)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 	private:
 		std::string m_Command;
 	};
