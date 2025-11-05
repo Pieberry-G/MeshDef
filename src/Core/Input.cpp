@@ -30,13 +30,15 @@ namespace MeshDef {
 
 	float Input::GetMouseX()
 	{
-		auto[x, y] = GetMousePosition();
+		float x, y;
+		std::tie(x, y) = GetMousePosition();
 		return x;
 	}
 
 	float Input::GetMouseY()
 	{
-		auto [x, y] = GetMousePosition();
+		float x, y;
+		std::tie(x, y) = GetMousePosition();
 		return y;
 	}
 

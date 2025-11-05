@@ -10,3 +10,10 @@
 	path = deps/polyscope
 	url = https://github.com/Pieberry-G/polyscope.git
 	branch = MeshDef
+[submodule "deps/osi_clp"]
+	path = deps/osi_clp
+	url = https://github.com/openMVG-thirdparty/osi_clp.git
+	branch = Tags/0.107.8
+[submodule "deps/MeshFix/MeshFix-V2.1"]
+	path = deps/MeshFix/MeshFix-V2.1
+	url = https://github.com/MarcoAttene/MeshFix-V2.1.git

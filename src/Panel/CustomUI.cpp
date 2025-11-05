@@ -19,10 +19,10 @@ namespace MeshDef {
 
         if (ImGui::InputFloat("Threshold", &m_QSlimThreshold, 0.1f, 0.0f, "%.2f"))
         {
-            if (m_QSlimThreshold < 0.0f)
-            {
-                m_QSlimThreshold = 0.0f;
-            }
+            //if (m_QSlimThreshold < 0.0f)
+            //{
+            //    m_QSlimThreshold = 0.0f;
+            //}
         }
 
         if (ImGui::Button("Execute QSlim"))

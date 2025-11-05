@@ -20,7 +20,7 @@ namespace MeshDef {
 		float GetQSlimThreshold() { return m_QSlimThreshold; }
 
 	private:
-		float m_QSlimThreshold = 0.0f;
+		float m_QSlimThreshold = -0.1f;
 
 		EventCallbackFn m_EventCallback;
 	};

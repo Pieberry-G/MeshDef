@@ -154,7 +154,10 @@ protected: // QSlim
 	std::vector<Eigen::Vector3d> edgeBestPoses;
 
 	void initQSlim(void);
-	double getMinErr(size_t edgeI);
+	void getAdjacentTrisData(size_t edgeI, std::vector<Eigen::Vector3d>& adjacentTrisData, bool includeDirectFaces);
+	bool getMinErr(size_t edgeI, double& minErr);
+	bool solveLinearProgrammingForVertex(size_t v0I, size_t v1I, const std::vector<Eigen::Vector3d>& adjacentTrisData, Eigen::Vector3d& optimalPos, double& volumeIncrease);
+	
 	std::size_t collapseEdge(std::size_t he,
 		std::vector<size_t>& affectedHE,
 		std::vector<size_t>& deletedHE,

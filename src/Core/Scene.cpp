@@ -9,7 +9,7 @@ namespace MeshDef {
 		m_MeshProcessUI.Init();
 		polyscope::state::userCallbacks.push_back(m_MeshProcessUI.GetDrawUIFunction());
 
-		m_Model = loadModelFromFile("../assets/meshes/camel.obj");
+		m_Model = loadModelFromFile("../assets/meshes/cow1.obj");
 		m_Model->DrawMeshToPolyscope();
 	}
 
@@ -87,7 +87,14 @@ namespace MeshDef {
 	void Scene::OnExecuteQSlim()
 	{
 		float QSlimThreshold = m_MeshProcessUI.GetQSlimThreshold();
-		m_Model->GetEditMesh()->collapseEdge_QSlim(QSlimThreshold, -1);
+		if (QSlimThreshold > 0)
+		{
+			m_Model->GetEditMesh()->collapseEdge_QSlim(QSlimThreshold, -1);
+		}
+		else
+		{
+			m_Model->GetEditMesh()->collapseEdge_QSlim(0.0f, 1);
+		}
 		m_Model->DrawMeshToPolyscope();
 	}
 

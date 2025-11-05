@@ -18,9 +18,14 @@
 
 #include "Mesh/EditMesh.h"
 #include "Mesh/MeshDeformer3D.h"
+#include "Mesh/SelfIntersections.h"
 
 #include <Eigen/Geometry>
 #include <cmath>
+
+#include <OsiClpSolverInterface.hpp>
+#include <CoinPackedVector.hpp>
+#include <CoinPackedMatrix.hpp>
 
 #include <map>
 #include <set>
@@ -2093,47 +2098,270 @@ void EditMesh::subdiv_loop_withSelfDSUpdate(void)
 	flag_edited();
 }
 
-
+#if 0
 // Assignment 2: mesh simplification
 
-// 2.1 Edge Collapse (QSlim) 
-// solve the linear system to get the best position after collapsing and
-// the minimum error, return the minimum error, save the best position into edgeBestPoses
-// for later use
-double EditMesh::getMinErr(size_t edgeI)
+ // 2.1 Edge Collapse (QSlim) 
+ // solve the linear system to get the best position after collapsing and
+ // the minimum error, return the minimum error, save the best position into edgeBestPoses
+ // for later use
+ bool EditMesh::getMinErr(size_t edgeI, double& minErr)
+ {
+ 	size_t v0I = m_heData[edgeI].vert;
+ 	size_t v1I = m_heData[m_heData[edgeI].twin].vert;
+ 	const Eigen::Vector3d& v0 = m_vertices[v0I];
+ 	const Eigen::Vector3d& v1 = m_vertices[v1I];
+
+ 	Quadric Q = vertQuadrics[v0I];
+ 	Q += vertQuadrics[v1I];
+
+ 	minErr = Q.solve(edgeBestPoses[edgeI]);
+ 	if (minErr < 0.0)
+ 	{
+ 		edgeBestPoses[edgeI] = (v0 + v1) / 2;
+ 		minErr = Q.value(edgeBestPoses[edgeI]);
+ 	}
+ 	return true;
+ }
+#endif
+
+ void EditMesh::computeTriQ(size_t triI, Quadric& Q)
+ {
+ 	const half_edge *hePtr = &m_heData[m_faceData[triI]];
+ 	const Eigen::Vector3d v0 = m_vertices[hePtr->vert];
+ 	hePtr = &m_heData[hePtr->next];
+ 	const Eigen::Vector3d v1 = m_vertices[hePtr->vert];
+ 	hePtr = &m_heData[hePtr->next];
+ 	const Eigen::Vector3d v2 = m_vertices[hePtr->vert];
+ 	assert(hePtr->next == m_faceData[triI]);
+
+ 	Eigen::Vector3d triNormalVec = (v1 - v0).cross(v2 - v0);
+ 	Eigen::Vector3d triNormal = triNormalVec.normalized();
+ 	Q.init(triNormal, -(triNormal.dot(v0)), triNormalVec.norm() / 2.0, v0.dot(v1.cross(v2)));
+ 	Q *= Q.getArea();
+ }
+
+
+#if 1
+
+// 2.1 Edge Collapse with Volume Preservation
+// Use linear programming to find position that minimizes volume while enclosing original volume
+// Return the volume increase cost, save the best position into edgeBestPoses
+
+// Get vertices adjacent to the edge (ring of vertices)
+void EditMesh::getAdjacentTrisData(size_t edgeI, std::vector<Eigen::Vector3d>& adjacentTrisData, bool includeDirectFaces)
 {
-	size_t v0I = m_heData[edgeI].vert;
-	size_t v1I = m_heData[m_heData[edgeI].twin].vert;
-	const Eigen::Vector3d& v0 = m_vertices[v0I];
-	const Eigen::Vector3d& v1 = m_vertices[v1I];
+	adjacentTrisData.clear();
 
-	Quadric Q = vertQuadrics[v0I];
-	Q += vertQuadrics[v1I];
+	const half_edge& heBase = m_heData[edgeI];
+	const half_edge& heTwin = m_heData[heBase.twin];
 
-	double minErr = Q.solve(edgeBestPoses[edgeI]);
-	if (minErr < 0.0)
+	const half_edge* HEPtr = &m_heData[heBase.next];
+	if (!includeDirectFaces)
 	{
-		edgeBestPoses[edgeI] = (v0 + v1) / 2;
-		minErr = Q.value(edgeBestPoses[edgeI]);
+		HEPtr = &m_heData[m_heData[HEPtr->twin].next];
 	}
-	return minErr;
+	while (HEPtr != &heTwin)
+	{
+		assert(HEPtr->vert == heTwin.vert);
+		const half_edge *hePtr = HEPtr;
+		for (int j = 0; j < 3; j++)
+		{
+			adjacentTrisData.push_back(m_vertices[hePtr->vert]);
+			hePtr = &m_heData[hePtr->next];
+		}
+		HEPtr = &m_heData[m_heData[HEPtr->twin].next];
+	}
+
+	HEPtr = &m_heData[heTwin.next];
+	if (!includeDirectFaces)
+	{
+		HEPtr = &m_heData[m_heData[HEPtr->twin].next];
+	}
+	while (HEPtr != &heBase)
+	{
+		assert(HEPtr->vert == heBase.vert);
+		const half_edge *hePtr = HEPtr;
+		for (int j = 0; j < 3; j++)
+		{
+			adjacentTrisData.push_back(m_vertices[hePtr->vert]);
+			hePtr = &m_heData[hePtr->next];
+		}
+		HEPtr = &m_heData[m_heData[HEPtr->twin].next];
+	}
 }
 
-void EditMesh::computeTriQ(size_t triI, Quadric& Q)
+bool EditMesh::getMinErr(size_t edgeI, double& minErr)
 {
-	const half_edge *hePtr = &m_heData[m_faceData[triI]];
-	const Eigen::Vector3d v0 = m_vertices[hePtr->vert];
-	hePtr = &m_heData[hePtr->next];
-	const Eigen::Vector3d v1 = m_vertices[hePtr->vert];
-	hePtr = &m_heData[hePtr->next];
-	const Eigen::Vector3d v2 = m_vertices[hePtr->vert];
-	assert(hePtr->next == m_faceData[triI]);
+    size_t v0I = m_heData[edgeI].vert;
+    size_t v1I = m_heData[m_heData[edgeI].twin].vert;
+    const Eigen::Vector3d& v0 = m_vertices[v0I];
+    const Eigen::Vector3d& v1 = m_vertices[v1I];
+    
+    // Get the ring of vertices adjacent to the edge endpoints
+    std::vector<Eigen::Vector3d> adjacentTrisData;
+    getAdjacentTrisData(edgeI, adjacentTrisData, true);
+	if (DetectSelfIntersections(adjacentTrisData) > 0)
+	{
+		return false;
+	}
+    
+    // Use linear programming to find position that minimizes volume
+    // while satisfying constraints to enclose original volume
+	if (!solveLinearProgrammingForVertex(v0I, v1I, adjacentTrisData, edgeBestPoses[edgeI], minErr))
+	{
+		return false;
+	}
 
-	Eigen::Vector3d triNormalVec = (v1 - v0).cross(v2 - v0);
-	Eigen::Vector3d triNormal = triNormalVec.normalized();
-	Q.init(triNormal, -(triNormal.dot(v0)), triNormalVec.norm() / 2.0, v0.dot(v1.cross(v2)));
-	Q *= Q.getArea();
+	std::vector<Eigen::Vector3d> newTrisData;
+	getAdjacentTrisData(edgeI, newTrisData, false);
+	for (size_t i = 0; i < newTrisData.size(); i += 3)
+	{
+		newTrisData[i] = edgeBestPoses[edgeI];
+	}
+	for (size_t i = 0; i < newTrisData.size(); i ++)
+	{
+		adjacentTrisData.push_back(newTrisData[i]);
+	}
+	
+	if (DetectSelfIntersections(adjacentTrisData) > 0)
+	{
+		return false;
+	}
+	
+	return true;
 }
+
+// Solve linear programming problem to find optimal vertex position
+bool EditMesh::solveLinearProgrammingForVertex(size_t v0I, size_t v1I, const std::vector<Eigen::Vector3d>& adjacentTrisData, Eigen::Vector3d& optimalPos, double& volumeIncrease)
+{
+    // Implementation of linear programming algorithm
+    // Constraints: new mesh must enclose original volume
+    // Objective: minimize new mesh volume
+
+	int nAdjacentTris = adjacentTrisData.size() / 3;
+	
+	// 目标函数系数
+	Eigen::Vector3d obj_coeff = Eigen::Vector3d::Zero();
+	// 约束矩阵
+	Eigen::MatrixXd constraint_mat(nAdjacentTris, 3);
+	// 约束下界
+	Eigen::VectorXd lower_bounds(nAdjacentTris);
+	
+	//std::cout << "original edge: (" << m_vertices[v0I](0) << ", " << m_vertices[v0I](1) << ", " << m_vertices[v0I](2) << ")" << std::endl;
+	//std::cout << "original edge: (" << m_vertices[v1I](0) << ", " << m_vertices[v1I](1) << ", " << m_vertices[v1I](2) << ")" << std::endl;
+	for (size_t i = 0; i < nAdjacentTris; i++)
+	{
+		const Eigen::Vector3d v0 = adjacentTrisData[i * 3 + 0];
+		const Eigen::Vector3d v1 = adjacentTrisData[i * 3 + 1];
+		const Eigen::Vector3d v2 = adjacentTrisData[i * 3 + 2];
+		
+		obj_coeff -= (v1 - v0).cross(v2 - v0) / 6.0;
+		
+		Eigen::Vector3d triNormalVec = (v1 - v0).cross(v2 - v0);
+		Eigen::Vector3d triNormal = triNormalVec.normalized();
+		constraint_mat.row(i) = triNormal;
+
+		lower_bounds(i) = triNormal.dot(v0) - 1e-6;
+		//std::cout << "constraint: " << triNormal(0) << "x + " << triNormal(1) << "y + " << triNormal(2) << "z + " << -triNormal.dot(v0) << " >= 0" << std::endl;
+	}
+    
+    // 创建求解器
+    OsiClpSolverInterface solver;
+    
+    // 设置问题维度
+    int num_cols = 3;  // x, y, z
+    int num_rows = nAdjacentTris;  // 约束数量
+    
+    // 变量下界 (>= 0)
+    double* col_lower = new double[num_cols];
+    double* col_upper = new double[num_cols];
+    for (int i = 0; i < num_cols; i++)
+	{
+        col_lower[i] = -10.0;
+        col_upper[i] = 10.0;
+    }
+    
+    // 约束边界
+    double* row_lower = new double[num_rows];
+    double* row_upper = new double[num_rows];
+    for (int i = 0; i < num_rows; i++)
+    {
+        row_lower[i] = lower_bounds(i);
+        row_upper[i] = solver.getInfinity();
+
+		row_lower[i] = (std::numeric_limits<double>::min)();
+		row_upper[i] = lower_bounds(i);
+    }
+    
+    // 约束矩阵（压缩列格式）
+    CoinPackedMatrix matrix;
+    matrix.setDimensions(0, num_cols);
+    
+    for (int i = 0; i < num_rows; i++)
+    {
+        CoinPackedVector row;
+        for (int j = 0; j < num_cols; j++)
+        {
+            if (constraint_mat(i, j) != 0)
+            {
+                row.insert(j, constraint_mat(i, j));
+            }
+        }
+        matrix.appendRow(row);
+    }
+    
+    // 加载问题
+    solver.loadProblem(matrix, col_lower, col_upper, 
+                      obj_coeff.data(), row_lower, row_upper);
+    
+    // 求解
+    solver.initialSolve();
+    
+    // 输出结果
+    if (solver.isProvenOptimal())
+	{
+        std::cout << "target: " << solver.getObjValue() << std::endl;
+        const double* solution = solver.getColSolution();
+        for (int i = 0; i < num_cols; i++)
+		{
+        	optimalPos(i) = solution[i];
+        }
+        std::cout << "new vertex: (" << solution[0] << ", " << solution[1] << ", " << solution[2] << ")" << std::endl << std::endl;
+    	volumeIncrease = 0.0;
+    	for (size_t i = 0; i < nAdjacentTris; i++)
+    	{
+    		const Eigen::Vector3d v0 = adjacentTrisData[i * 3 + 0];
+    		const Eigen::Vector3d v1 = adjacentTrisData[i * 3 + 1];
+    		const Eigen::Vector3d v2 = adjacentTrisData[i * 3 + 2];
+    		volumeIncrease -= (optimalPos - v0).dot((v1 - v0).cross(v2 - v0)) / 6.0;
+    	}
+    }
+	else
+	{
+        std::cout << "can not fine best xyz" << std::endl << std::endl;
+    }
+    
+    // 清理
+    delete[] col_lower;
+    delete[] col_upper;
+    delete[] row_lower;
+    delete[] row_upper;
+
+	if (solver.isProvenOptimal())
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+// The collapseEdge_QSlim function remains largely the same
+// but now it uses volume-based cost metric automatically
+#endif
+
 
 void EditMesh::initQSlim(void)
 {
@@ -2150,7 +2378,7 @@ void EditMesh::initQSlim(void)
 	vertQuadrics.reserve(m_vertices.size());
 	for (size_t vertI = 0; vertI < m_vertData.size(); vertI++)
 	{
-		const half_edge *hePtr = &m_heData[m_vertData[vertI]];
+		const half_edge* hePtr = &m_heData[m_vertData[vertI]];
 
 		Quadric Q(triQuadrics[hePtr->face]);
 		hePtr = &m_heData[m_heData[m_heData[hePtr->next].next].twin];
@@ -2182,7 +2410,12 @@ void EditMesh::initQSlim(void)
 			if (collapsable(edgeI))
 			{
 				twinInside[m_heData[edgeI].twin] = edgeI;
-				edgesToCollapse.insert(edgeI, -getMinErr(edgeI));
+				double minErr;
+				bool feasible = getMinErr(edgeI, minErr);
+				if (feasible)
+				{
+					edgesToCollapse.insert(edgeI, -minErr);
+				}
 			}
 			else
 			{
@@ -2277,13 +2510,23 @@ void EditMesh::collapseEdge_QSlim(double threshold, int decreaseTris)
 			}
 
 			// update min error in heap and best position for affected edges
+			double minErr;
+			bool feasible;
 			for (auto HEIter = affectedHE.begin(); HEIter != affectedHE.end(); HEIter++)
 			{
 				switch (twinInside[*HEIter])
 				{
 				case -1:
 					// self inside heap
-					edgesToCollapse.update(*HEIter, -getMinErr(*HEIter));
+					feasible = getMinErr(*HEIter, minErr);
+					if (feasible)
+					{
+						edgesToCollapse.update(*HEIter, -minErr);
+					}
+					else
+					{
+						edgesToCollapse.remove(*HEIter);
+					}
 					break;
 
 				case -2:
@@ -2291,15 +2534,27 @@ void EditMesh::collapseEdge_QSlim(double threshold, int decreaseTris)
 					assert(twinInside[m_heData[*HEIter].twin] == -2);
 					if (collapsable(*HEIter))
 					{
-						edgesToCollapse.insert(*HEIter, -getMinErr(*HEIter));
-						twinInside[*HEIter] = -1;
-						twinInside[m_heData[*HEIter].twin] = *HEIter;
+						feasible = getMinErr(*HEIter, minErr);
+						if (feasible)
+						{
+							edgesToCollapse.insert(*HEIter, -minErr);
+							twinInside[*HEIter] = -1;
+							twinInside[m_heData[*HEIter].twin] = *HEIter;
+						}
 					}
 					break;
 
 				default:
 					// twin inside heap
-					edgesToCollapse.update(twinInside[*HEIter], -getMinErr(twinInside[*HEIter]));
+					feasible = getMinErr(*HEIter, minErr);
+					if (feasible)
+					{
+						edgesToCollapse.update(twinInside[*HEIter], -minErr);
+					}
+					else
+					{
+						edgesToCollapse.remove(twinInside[*HEIter]);
+					}
 					break;
 				}
 			}
