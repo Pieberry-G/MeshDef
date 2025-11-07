@@ -9,13 +9,13 @@ namespace MeshDef {
 		m_MeshProcessUI.Init();
 		polyscope::state::userCallbacks.push_back(m_MeshProcessUI.GetDrawUIFunction());
 
-		m_Model = loadModelFromFile("../assets/meshes/cow1.obj");
-		m_Model->DrawMeshToPolyscope();
+		LoadModelFromFile("../assets/meshes/cow1.obj");
 	}
 
 	void Scene::Clean()
 	{
-		
+		polyscope::removeAllStructures();
+		m_Model = nullptr;
 	}
 
 	bool Scene::OnKeyReleased(KeyReleasedEvent& e)
@@ -48,15 +48,20 @@ namespace MeshDef {
 	bool Scene::OnAppUpdate(AppUpdateEvent& e)
 	{
 		static const std::unordered_map<std::string, std::function<void()>> functionMap = {
-			{ "ExecuteQSlim",			 MD_BIND_EVENT_FN(Scene::OnExecuteQSlim)		  },
+			{ "SimplifyQSlim",		MD_BIND_EVENT_FN(Scene::OnSimplifyQSlim)	 },
+			{ "SimplifyOuterHull",	MD_BIND_EVENT_FN(Scene::OnSimplifyOuterHull) },
+			{ "SimplifyInnerHull",	MD_BIND_EVENT_FN(Scene::OnSimplifyInnerHull) },
 		};
 
 		std::string command = e.GetCommand();
 		auto it = functionMap.find(command);
-		if (it != functionMap.end()) {
+		if (it != functionMap.end())
+		{
 			it->second();
 			return true;
-		} else {
+		}
+		else
+		{
 			MD_CORE_ERROR("Could not find the relevant function!");
 			return false;
 		}
@@ -84,16 +89,50 @@ namespace MeshDef {
 		return false;
 	}
 
-	void Scene::OnExecuteQSlim()
+	 void Scene::LoadModelFromFile(const std::string& filepath)
+	 {
+	 	m_Model = loadModelFromFile(filepath);
+	 	m_Model->DrawMeshToPolyscope();
+	 }
+
+	void Scene::OnSimplifyQSlim()
 	{
 		float QSlimThreshold = m_MeshProcessUI.GetQSlimThreshold();
 		if (QSlimThreshold > 0)
 		{
-			m_Model->GetEditMesh()->collapseEdge_QSlim(QSlimThreshold, -1);
+			m_Model->GetEditMesh()->SimplifyQSlim(QSlimThreshold, -1);
 		}
 		else
 		{
-			m_Model->GetEditMesh()->collapseEdge_QSlim(0.0f, 1);
+			m_Model->GetEditMesh()->SimplifyQSlim(0.0f, 1);
+		}
+		m_Model->DrawMeshToPolyscope();
+	}
+
+	void Scene::OnSimplifyOuterHull()
+	{
+		float QSlimThreshold = m_MeshProcessUI.GetQSlimThreshold();
+		if (QSlimThreshold > 0)
+		{
+			m_Model->GetEditMesh()->SimplifyOuterHull(QSlimThreshold, -1);
+		}
+		else
+		{
+			m_Model->GetEditMesh()->SimplifyOuterHull(0.0f, 1);
+		}
+		m_Model->DrawMeshToPolyscope();
+	}
+
+	void Scene::OnSimplifyInnerHull()
+	{
+		float QSlimThreshold = m_MeshProcessUI.GetQSlimThreshold();
+		if (QSlimThreshold > 0)
+		{
+			m_Model->GetEditMesh()->SimplifyInnerHull(QSlimThreshold, -1);
+		}
+		else
+		{
+			m_Model->GetEditMesh()->SimplifyInnerHull(0.0f, 1);
 		}
 		m_Model->DrawMeshToPolyscope();
 	}

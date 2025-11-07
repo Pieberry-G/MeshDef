@@ -22,7 +22,7 @@ namespace MeshDef {
             {
                 if (ImGui::MenuItem("New Project...", "Ctrl+N"))
                 {
-                    //NewProject();
+                    NewProject();
                 }
                 if (ImGui::MenuItem("Export...", "Ctrl+S"))
                 {
@@ -72,55 +72,49 @@ namespace MeshDef {
     {
         bool control = Input::IsKeyPressed(Key::LeftControl) || Input::IsKeyPressed(Key::RightControl);
         bool shift = Input::IsKeyPressed(Key::LeftShift) || Input::IsKeyPressed(Key::RightShift);
-		//switch (e.GetKeyCode())
-		//{
-  //      case Key::S:
-  //      {
-  //          if (control) {
-  //              ExportMesh();
-  //              return true;
-  //          }
-  //          break;
-  //      }
-  //      case Key::B:
-  //      {
-  //          if (control) {
-  //              ExportMeshPart();
-  //              return true;
-  //          }
-  //          break;
-  //      }
-		//case Key::N:
-		//{
-  //          if (control) {
-  //              NewProject();
-  //              return true;
-  //          }
-		//	break;
-		//}
-		//}
+		switch (e.GetKeyCode())
+		{
+        case Key::S:
+        {
+            if (control) {
+                //ExportMesh();
+                return true;
+            }
+            break;
+        }
+        case Key::B:
+        {
+            if (control) {
+                //ExportMeshPart();
+                return true;
+            }
+            break;
+        }
+		case Key::N:
+		{
+            if (control) {
+                NewProject();
+                return true;
+            }
+			break;
+		}
+		}
         return false;
     }
 
-    //void MainMenu::NewProject()
-    //{
-    //    std::string filepath = FileDialogs::OpenFile("AI Generated Mesh (*.obj)\0*.obj\0");
-    //    if (!filepath.empty()) {
-    //        std::unique_ptr<Scene>& scene = Application::Get()->GetScene();
-    //        scene->Clean();
+    void MainMenu::NewProject()
+    {
+        std::string filepath = FileDialogs::OpenFile("Input Mesh (*.obj)\0*.obj\0");
+        if (!filepath.empty()) {
+            std::unique_ptr<Scene>& scene = Application::Get()->GetScene();
+            scene->Clean();
 
-    //        GC_CORE_WARN("Loading ring file: {0}", filepath);
-    //        scene->AddRing("Ring", filepath);
+            MD_CORE_WARN("Loading Mesh file: {0}", filepath);
+            scene->LoadModelFromFile(filepath);
 
-    //        // Get indices for element picking
-    //        std::shared_ptr<Mesh>& ring = scene->GetRing();
-    //        polyscope::state::facePickIndStart = ring->nVertices();
-    //        polyscope::state::edgePickIndStart = polyscope::state::facePickIndStart + ring->nFaces();
-    //        polyscope::state::halfedgePickIndStart = polyscope::state::edgePickIndStart + ring->nEdges();
-
-    //        polyscope::view::resetCameraToHomeView();
-    //    }
-    //}
+            polyscope::view::resetCameraToHomeView();
+        }
+    }
 
     //static void WriteMeshWithOffset(std::shared_ptr<Mesh>& mesh, const std::string& name, std::ofstream& out, int& vertexOffset)
     //{

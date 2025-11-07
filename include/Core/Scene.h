@@ -14,16 +14,20 @@ namespace MeshDef {
 	{
 	public:
 		Scene();
-
 		void Clean();
+
 		bool OnKeyReleased(KeyReleasedEvent& e);
 		bool OnAppUpdate(AppUpdateEvent& e);
 		bool OnAppRender(AppRenderEvent& e);
 
+		void LoadModelFromFile(const std::string& filepath);
+		
 		MeshProcessUI& GetMeshProcessUI() { return m_MeshProcessUI; }
 
-	private:
-		void OnExecuteQSlim();
+	protected:
+		void OnSimplifyQSlim();
+		void OnSimplifyOuterHull();
+		void OnSimplifyInnerHull();
 
 	private:
 		std::unique_ptr<Model> m_Model;

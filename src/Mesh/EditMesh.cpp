@@ -18,18 +18,14 @@
 
 #include "Mesh/EditMesh.h"
 #include "Mesh/MeshDeformer3D.h"
-#include "Mesh/SelfIntersections.h"
+#include "Mesh/MeshSimplifier3D.h"
+#include "Core/State.h"
 
 #include <Eigen/Geometry>
 #include <cmath>
 
-#include <OsiClpSolverInterface.hpp>
-#include <CoinPackedVector.hpp>
-#include <CoinPackedMatrix.hpp>
-
 #include <map>
 #include <set>
-#include <iostream>
 #include <memory>
 #include <fstream>
 #include <ctime>
@@ -1197,22 +1193,22 @@ void EditMesh::get_draw_colors(float* colors) {
 	}
 
 	std::vector<size_t> top10;
-	if ((editCount_QSlim > editCount_vertRemov) &&
-		(edgesToCollapse.getTop10(top10)))
-	{
-		for (int i = top10.size() - 1; i >= 0; i--)
-		{
-			float G = 0.11f * i;
-			float R = 1.0f - G;
-			float B = (i == 0) ? 1.0f : 0.0f;
-
-			const half_edge *HEPtr = &m_heData[top10[i]];
-			float colorVec[] = { R, G, B, R, G, B, R, G, B };
-			std::memcpy(colors + 9 * HEPtr->face, colorVec, sizeof(colorVec));
-			std::memcpy(colors + 9 * m_heData[HEPtr->twin].face, colorVec, sizeof(colorVec));
-		}
-	}
-	else if (vertexToRemove.getTop10(top10))
+	// if ((editCount_QSlim > editCount_vertRemov) &&
+	// 	(edgesToCollapse.getTop10(top10)))
+	// {
+	// 	for (int i = top10.size() - 1; i >= 0; i--)
+	// 	{
+	// 		float G = 0.11f * i;
+	// 		float R = 1.0f - G;
+	// 		float B = (i == 0) ? 1.0f : 0.0f;
+	//
+	// 		const half_edge *HEPtr = &m_heData[top10[i]];
+	// 		float colorVec[] = { R, G, B, R, G, B, R, G, B };
+	// 		std::memcpy(colors + 9 * HEPtr->face, colorVec, sizeof(colorVec));
+	// 		std::memcpy(colors + 9 * m_heData[HEPtr->twin].face, colorVec, sizeof(colorVec));
+	// 	}
+	// }
+	// else if (vertexToRemove.getTop10(top10))
 	{
 		for (int i = top10.size() - 1; i >= 0; i--)
 		{
@@ -2098,617 +2094,46 @@ void EditMesh::subdiv_loop_withSelfDSUpdate(void)
 	flag_edited();
 }
 
-#if 0
-// Assignment 2: mesh simplification
-
- // 2.1 Edge Collapse (QSlim) 
- // solve the linear system to get the best position after collapsing and
- // the minimum error, return the minimum error, save the best position into edgeBestPoses
- // for later use
- bool EditMesh::getMinErr(size_t edgeI, double& minErr)
- {
- 	size_t v0I = m_heData[edgeI].vert;
- 	size_t v1I = m_heData[m_heData[edgeI].twin].vert;
- 	const Eigen::Vector3d& v0 = m_vertices[v0I];
- 	const Eigen::Vector3d& v1 = m_vertices[v1I];
-
- 	Quadric Q = vertQuadrics[v0I];
- 	Q += vertQuadrics[v1I];
-
- 	minErr = Q.solve(edgeBestPoses[edgeI]);
- 	if (minErr < 0.0)
- 	{
- 		edgeBestPoses[edgeI] = (v0 + v1) / 2;
- 		minErr = Q.value(edgeBestPoses[edgeI]);
- 	}
- 	return true;
- }
-#endif
-
- void EditMesh::computeTriQ(size_t triI, Quadric& Q)
- {
- 	const half_edge *hePtr = &m_heData[m_faceData[triI]];
- 	const Eigen::Vector3d v0 = m_vertices[hePtr->vert];
- 	hePtr = &m_heData[hePtr->next];
- 	const Eigen::Vector3d v1 = m_vertices[hePtr->vert];
- 	hePtr = &m_heData[hePtr->next];
- 	const Eigen::Vector3d v2 = m_vertices[hePtr->vert];
- 	assert(hePtr->next == m_faceData[triI]);
-
- 	Eigen::Vector3d triNormalVec = (v1 - v0).cross(v2 - v0);
- 	Eigen::Vector3d triNormal = triNormalVec.normalized();
- 	Q.init(triNormal, -(triNormal.dot(v0)), triNormalVec.norm() / 2.0, v0.dot(v1.cross(v2)));
- 	Q *= Q.getArea();
- }
-
-
-#if 1
-
-// 2.1 Edge Collapse with Volume Preservation
-// Use linear programming to find position that minimizes volume while enclosing original volume
-// Return the volume increase cost, save the best position into edgeBestPoses
-
-// Get vertices adjacent to the edge (ring of vertices)
-void EditMesh::getAdjacentTrisData(size_t edgeI, std::vector<Eigen::Vector3d>& adjacentTrisData, bool includeDirectFaces)
+void EditMesh::SimplifyQSlim(double threshold, int decreaseTris)
 {
-	adjacentTrisData.clear();
-
-	const half_edge& heBase = m_heData[edgeI];
-	const half_edge& heTwin = m_heData[heBase.twin];
-
-	const half_edge* HEPtr = &m_heData[heBase.next];
-	if (!includeDirectFaces)
+	State::opState = OperationState::SimplifyQSlim;
+	
+	if (meshSimplifier == NULL)
 	{
-		HEPtr = &m_heData[m_heData[HEPtr->twin].next];
-	}
-	while (HEPtr != &heTwin)
-	{
-		assert(HEPtr->vert == heTwin.vert);
-		const half_edge *hePtr = HEPtr;
-		for (int j = 0; j < 3; j++)
-		{
-			adjacentTrisData.push_back(m_vertices[hePtr->vert]);
-			hePtr = &m_heData[hePtr->next];
-		}
-		HEPtr = &m_heData[m_heData[HEPtr->twin].next];
-	}
-
-	HEPtr = &m_heData[heTwin.next];
-	if (!includeDirectFaces)
-	{
-		HEPtr = &m_heData[m_heData[HEPtr->twin].next];
-	}
-	while (HEPtr != &heBase)
-	{
-		assert(HEPtr->vert == heBase.vert);
-		const half_edge *hePtr = HEPtr;
-		for (int j = 0; j < 3; j++)
-		{
-			adjacentTrisData.push_back(m_vertices[hePtr->vert]);
-			hePtr = &m_heData[hePtr->next];
-		}
-		HEPtr = &m_heData[m_heData[HEPtr->twin].next];
-	}
-}
-
-bool EditMesh::getMinErr(size_t edgeI, double& minErr)
-{
-    size_t v0I = m_heData[edgeI].vert;
-    size_t v1I = m_heData[m_heData[edgeI].twin].vert;
-    const Eigen::Vector3d& v0 = m_vertices[v0I];
-    const Eigen::Vector3d& v1 = m_vertices[v1I];
-    
-    // Get the ring of vertices adjacent to the edge endpoints
-    std::vector<Eigen::Vector3d> adjacentTrisData;
-    getAdjacentTrisData(edgeI, adjacentTrisData, true);
-	if (DetectSelfIntersections(adjacentTrisData) > 0)
-	{
-		return false;
-	}
-    
-    // Use linear programming to find position that minimizes volume
-    // while satisfying constraints to enclose original volume
-	if (!solveLinearProgrammingForVertex(v0I, v1I, adjacentTrisData, edgeBestPoses[edgeI], minErr))
-	{
-		return false;
-	}
-
-	std::vector<Eigen::Vector3d> newTrisData;
-	getAdjacentTrisData(edgeI, newTrisData, false);
-	for (size_t i = 0; i < newTrisData.size(); i += 3)
-	{
-		newTrisData[i] = edgeBestPoses[edgeI];
-	}
-	for (size_t i = 0; i < newTrisData.size(); i ++)
-	{
-		adjacentTrisData.push_back(newTrisData[i]);
+		meshSimplifier = new MeshSimplifier3D(*this);
 	}
 	
-	if (DetectSelfIntersections(adjacentTrisData) > 0)
-	{
-		return false;
-	}
+	meshSimplifier->InitQSlim();
+	meshSimplifier->SimplifyQSlim(threshold, decreaseTris);
+	meshSimplifier->CompactMesh();
+}
+
+void EditMesh::SimplifyOuterHull(double threshold, int decreaseTris)
+{
+	State::opState = OperationState::SimplifyOuterHull;
 	
-	return true;
+	if (meshSimplifier == NULL)
+	{
+		meshSimplifier = new MeshSimplifier3D(*this);
+	}
+
+	meshSimplifier->InitProgressiveHull(true);
+	meshSimplifier->SimplifyProgressiveHull(threshold, decreaseTris, true);
+	meshSimplifier->CompactMesh();
 }
 
-// Solve linear programming problem to find optimal vertex position
-bool EditMesh::solveLinearProgrammingForVertex(size_t v0I, size_t v1I, const std::vector<Eigen::Vector3d>& adjacentTrisData, Eigen::Vector3d& optimalPos, double& volumeIncrease)
+void EditMesh::SimplifyInnerHull(double threshold, int decreaseTris)
 {
-    // Implementation of linear programming algorithm
-    // Constraints: new mesh must enclose original volume
-    // Objective: minimize new mesh volume
+	State::opState = OperationState::SimplifyInnerHull;
 
-	int nAdjacentTris = adjacentTrisData.size() / 3;
-	
-	// 目标函数系数
-	Eigen::Vector3d obj_coeff = Eigen::Vector3d::Zero();
-	// 约束矩阵
-	Eigen::MatrixXd constraint_mat(nAdjacentTris, 3);
-	// 约束下界
-	Eigen::VectorXd lower_bounds(nAdjacentTris);
-	
-	//std::cout << "original edge: (" << m_vertices[v0I](0) << ", " << m_vertices[v0I](1) << ", " << m_vertices[v0I](2) << ")" << std::endl;
-	//std::cout << "original edge: (" << m_vertices[v1I](0) << ", " << m_vertices[v1I](1) << ", " << m_vertices[v1I](2) << ")" << std::endl;
-	for (size_t i = 0; i < nAdjacentTris; i++)
+	if (meshSimplifier == NULL)
 	{
-		const Eigen::Vector3d v0 = adjacentTrisData[i * 3 + 0];
-		const Eigen::Vector3d v1 = adjacentTrisData[i * 3 + 1];
-		const Eigen::Vector3d v2 = adjacentTrisData[i * 3 + 2];
-		
-		obj_coeff -= (v1 - v0).cross(v2 - v0) / 6.0;
-		
-		Eigen::Vector3d triNormalVec = (v1 - v0).cross(v2 - v0);
-		Eigen::Vector3d triNormal = triNormalVec.normalized();
-		constraint_mat.row(i) = triNormal;
-
-		lower_bounds(i) = triNormal.dot(v0) - 1e-6;
-		//std::cout << "constraint: " << triNormal(0) << "x + " << triNormal(1) << "y + " << triNormal(2) << "z + " << -triNormal.dot(v0) << " >= 0" << std::endl;
-	}
-    
-    // 创建求解器
-    OsiClpSolverInterface solver;
-    
-    // 设置问题维度
-    int num_cols = 3;  // x, y, z
-    int num_rows = nAdjacentTris;  // 约束数量
-    
-    // 变量下界 (>= 0)
-    double* col_lower = new double[num_cols];
-    double* col_upper = new double[num_cols];
-    for (int i = 0; i < num_cols; i++)
-	{
-        col_lower[i] = -10.0;
-        col_upper[i] = 10.0;
-    }
-    
-    // 约束边界
-    double* row_lower = new double[num_rows];
-    double* row_upper = new double[num_rows];
-    for (int i = 0; i < num_rows; i++)
-    {
-        row_lower[i] = lower_bounds(i);
-        row_upper[i] = solver.getInfinity();
-
-		row_lower[i] = (std::numeric_limits<double>::min)();
-		row_upper[i] = lower_bounds(i);
-    }
-    
-    // 约束矩阵（压缩列格式）
-    CoinPackedMatrix matrix;
-    matrix.setDimensions(0, num_cols);
-    
-    for (int i = 0; i < num_rows; i++)
-    {
-        CoinPackedVector row;
-        for (int j = 0; j < num_cols; j++)
-        {
-            if (constraint_mat(i, j) != 0)
-            {
-                row.insert(j, constraint_mat(i, j));
-            }
-        }
-        matrix.appendRow(row);
-    }
-    
-    // 加载问题
-    solver.loadProblem(matrix, col_lower, col_upper, 
-                      obj_coeff.data(), row_lower, row_upper);
-    
-    // 求解
-    solver.initialSolve();
-    
-    // 输出结果
-    if (solver.isProvenOptimal())
-	{
-        std::cout << "target: " << solver.getObjValue() << std::endl;
-        const double* solution = solver.getColSolution();
-        for (int i = 0; i < num_cols; i++)
-		{
-        	optimalPos(i) = solution[i];
-        }
-        std::cout << "new vertex: (" << solution[0] << ", " << solution[1] << ", " << solution[2] << ")" << std::endl << std::endl;
-    	volumeIncrease = 0.0;
-    	for (size_t i = 0; i < nAdjacentTris; i++)
-    	{
-    		const Eigen::Vector3d v0 = adjacentTrisData[i * 3 + 0];
-    		const Eigen::Vector3d v1 = adjacentTrisData[i * 3 + 1];
-    		const Eigen::Vector3d v2 = adjacentTrisData[i * 3 + 2];
-    		volumeIncrease -= (optimalPos - v0).dot((v1 - v0).cross(v2 - v0)) / 6.0;
-    	}
-    }
-	else
-	{
-        std::cout << "can not fine best xyz" << std::endl << std::endl;
-    }
-    
-    // 清理
-    delete[] col_lower;
-    delete[] col_upper;
-    delete[] row_lower;
-    delete[] row_upper;
-
-	if (solver.isProvenOptimal())
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-// The collapseEdge_QSlim function remains largely the same
-// but now it uses volume-based cost metric automatically
-#endif
-
-
-void EditMesh::initQSlim(void)
-{
-	// compute triangle plane equation (quadric)
-	std::vector<Quadric> triQuadrics;
-	triQuadrics.resize(m_faceData.size());
-	for (size_t triI = 0; triI < m_faceData.size(); triI++)
-	{
-		computeTriQ(triI, triQuadrics[triI]);
+		meshSimplifier = new MeshSimplifier3D(*this);
 	}
 
-	// compute vertex quadrics by summing over quadrics of incident triangles
-	vertQuadrics.resize(0);
-	vertQuadrics.reserve(m_vertices.size());
-	for (size_t vertI = 0; vertI < m_vertData.size(); vertI++)
-	{
-		const half_edge* hePtr = &m_heData[m_vertData[vertI]];
-
-		Quadric Q(triQuadrics[hePtr->face]);
-		hePtr = &m_heData[m_heData[m_heData[hePtr->next].next].twin];
-		while (hePtr != &m_heData[m_vertData[vertI]])
-		{
-			Q += triQuadrics[hePtr->face];
-			hePtr = &m_heData[m_heData[m_heData[hePtr->next].next].twin];
-		}
-		vertQuadrics.emplace_back(Q);
-	}
-
-	// Init edge heap by calculating the min error of collapsing each edge
-	// and use it as the key for sorting the edges in a binary heap.
-	// We will also save the best positions now to avoid recalculating.
-	edgesToCollapse.clear();
-	edgeBestPoses.resize(m_heData.size());
-	twinInside.resize(0);
-	twinInside.resize(m_heData.size(), -1);
-	for (size_t edgeI = 0; edgeI < m_heData.size(); edgeI++)
-	{
-		// twinInSide is a recorder to record which edges are inside the heap
-		// because we don't want to add both twin half edges into the heap.
-		// This recorder will also make us easier to update or reinsert edges
-		// into heap after each edge collapse.
-		if (twinInside[edgeI] == -1)
-		{
-			// only insert collapsable edges
-			// Collapsable is defined a not introducing non-manifold edges after collapsing.
-			if (collapsable(edgeI))
-			{
-				twinInside[m_heData[edgeI].twin] = edgeI;
-				double minErr;
-				bool feasible = getMinErr(edgeI, minErr);
-				if (feasible)
-				{
-					edgesToCollapse.insert(edgeI, -minErr);
-				}
-			}
-			else
-			{
-				twinInside[edgeI] = -2;
-				twinInside[m_heData[edgeI].twin] = -2;
-			}
-		}
-	}
-
-	// mark the state of edge heap to be the same as the mesh
-	editCount_QSlim = edit_count;
-}
-
-void EditMesh::collapseEdge_QSlim(double threshold, int decreaseTris)
-{
-	// init edge heap if necessary
-	if (editCount_QSlim != edit_count) { initQSlim(); }
-
-	// decide how many triangles to leave
-	int leftTris;
-	if (decreaseTris < 0)
-	{
-		if (threshold > 1.0) { leftTris = threshold; threshold /= m_faceData.size(); }
-		else { leftTris = threshold * m_faceData.size(); }
-	}
-	else
-	{
-		leftTris = m_faceData.size() - decreaseTris;
-		threshold = double(leftTris) / m_faceData.size();
-	}
-
-	int collapsedEdges = 0;
-	std::vector<size_t> affectedHE; // affected half edges after collapsing (needed for updating heap)
-	std::vector<size_t> deletedHE; // deleted half edges after collapsing (needed for updating heap)
-	while ((!edgesToCollapse.empty()) && (m_faceData.size() > leftTris))
-	{
-		// get the edge introducing min error from the heap
-		size_t e = edgesToCollapse.top()->edge_index;
-		edgesToCollapse.popTop();
-		twinInside[e] = twinInside[m_heData[e].twin] = -2;
-
-		assert(e < m_heData.size());
-
-		// only collapse collapsable edges
-		// Note that although we didn't insert incollapsible edges into the heap initially,
-		// collapsing the edges will make some originally collapsable edges incollapsible!
-		if (collapsable(e))
-		{
-			// m_heData[e].vert will be left, and the other vertex will be lazy deleted 
-			// half edges are also lazy deleted (only triangles are really deleted)
-			const size_t endPoints[2] = { m_heData[e].vert, m_heData[m_heData[e].twin].vert };
-
-			collapseEdge(e, affectedHE, deletedHE);
-
-			// incremente count for checking stop condition
-			collapsedEdges++;
-
-			//update vertex quadrics and importances to approximate global error
-			vertQuadrics[endPoints[0]] += vertQuadrics[endPoints[1]];
-
-			// delete deleted edges from the edge heap
-			for (int i = 0; i < 6; i++)
-			{
-				if ((i == 0) || (i == 3))
-				{
-					// these 2 are just the collapsed edge, 
-					// which has been deleted from the heap already
-					continue;
-				}
-				else
-				{
-					switch (twinInside[deletedHE[i]])
-					{
-					case -1:
-						// self inside heap
-						edgesToCollapse.remove(deletedHE[i]);
-						twinInside[deletedHE[i]] = twinInside[m_heData[deletedHE[i]].twin] = -2;
-						break;
-
-					case -2:
-						// both are not inside heap
-						assert(twinInside[m_heData[deletedHE[i]].twin] == -2);
-						break;
-
-					default:
-						// twin inside heap
-						edgesToCollapse.remove(twinInside[deletedHE[i]]);
-						twinInside[deletedHE[i]] = twinInside[m_heData[deletedHE[i]].twin] = -2;
-						break;
-					}
-				}
-			}
-
-			// update min error in heap and best position for affected edges
-			double minErr;
-			bool feasible;
-			for (auto HEIter = affectedHE.begin(); HEIter != affectedHE.end(); HEIter++)
-			{
-				switch (twinInside[*HEIter])
-				{
-				case -1:
-					// self inside heap
-					feasible = getMinErr(*HEIter, minErr);
-					if (feasible)
-					{
-						edgesToCollapse.update(*HEIter, -minErr);
-					}
-					else
-					{
-						edgesToCollapse.remove(*HEIter);
-					}
-					break;
-
-				case -2:
-					// both not inside heap
-					assert(twinInside[m_heData[*HEIter].twin] == -2);
-					if (collapsable(*HEIter))
-					{
-						feasible = getMinErr(*HEIter, minErr);
-						if (feasible)
-						{
-							edgesToCollapse.insert(*HEIter, -minErr);
-							twinInside[*HEIter] = -1;
-							twinInside[m_heData[*HEIter].twin] = *HEIter;
-						}
-					}
-					break;
-
-				default:
-					// twin inside heap
-					feasible = getMinErr(*HEIter, minErr);
-					if (feasible)
-					{
-						edgesToCollapse.update(twinInside[*HEIter], -minErr);
-					}
-					else
-					{
-						edgesToCollapse.remove(twinInside[*HEIter]);
-					}
-					break;
-				}
-			}
-		}
-	}
-
-	// pop out incollapsible edges for correctly visualizing the next candidate
-	while (!edgesToCollapse.empty() && !collapsable(edgesToCollapse.top()->edge_index)) 
-	{ 
-		edgesToCollapse.popTop(); 
-	}
-
-	// mark the QSlim data structure state and also the mesh state
-	editCount_QSlim++;
-	flag_edited();
-}
-
-// changed the original function to lazy delete half edges for keeping the index the same so that it's more convenient
-// also added the function of giving back deleted and affected half edge information for updating the edge heap
-std::size_t EditMesh::collapseEdge(std::size_t he,
-	std::vector<size_t>& affectedHE, std::vector<size_t>& deletedHE,
-	bool optimizePos)
-{
-	assert(he < m_heData.size());
-	assert(m_heData[he].face != HOLE_INDEX && m_heData[m_heData[he].twin].face != HOLE_INDEX && "Cannot collapse a boundary edge");
-
-	const half_edge& heBase = m_heData[he];
-	const half_edge& heTwin = m_heData[heBase.twin];
-
-	// We are going to delete the faces on either side of the chosen edge, 
-	// so we need to delete 3 half_edges and patch up the twin links on the 4 bordering edges.
-	std::size_t heBorder[4];
-	heBorder[0] = m_heData[heBase.next].twin;
-	heBorder[1] = m_heData[m_heData[heBase.next].next].twin;
-	heBorder[2] = m_heData[m_heData[heTwin.next].next].twin;
-	heBorder[3] = m_heData[heTwin.next].twin;
-
-	// TODO: Relax this assertion. We should be able to collapse a spike jutting into a hole.
-	assert((m_heData[heBorder[0]].face != HOLE_INDEX || m_heData[heBorder[1]].face != HOLE_INDEX) && "Cannot collapse an edge on a face with holes on either side.");
-	assert((m_heData[heBorder[2]].face != HOLE_INDEX || m_heData[heBorder[3]].face != HOLE_INDEX) && "Cannot collapse an edge on a face with holes on either side.");
-
-	//// Check if we can actually collapse. This checks for a degree 3 vertex at the vertices not on the edge we are collapsing.
-	//if (m_heData[m_heData[m_heData[heBorder[1]].next].twin].next == heBorder[0])
-	//	return HOLE_INDEX;
-	//if (m_heData[m_heData[m_heData[heBorder[2]].next].twin].next == heBorder[3])
-	//	return HOLE_INDEX;
-
-	// Capture the indices of things (2 faces & 6 half-edges) we want to delete.
-	std::size_t fToDelete[] = { heBase.face, heTwin.face };
-	std::size_t heToDelete[] = { he, heBase.next, m_heData[heBase.next].next, heBase.twin, heTwin.next, m_heData[heTwin.next].next };
-
-	// We may also need to fix the vertex->half_edge link for the verts using these faces. There are technically 4, but we only update the 3 that are not going to be deleted.
-	std::size_t verts[] = { this->prev(heBase).vert, heBase.vert, this->prev(heTwin).vert };
-
-	// Move the base vertex (arbitrarily) to the middle of the edge. Could leave it where it is, or do something fancier too.
-	if (optimizePos) { m_vertices[heBase.vert] = edgeBestPoses[he]; }
-
-	// Adjust all the twin's 1-ring to link to the vertex we are not going to delete.
-	std::size_t heIt = this->twin(this->next(heBase)).next;
-	std::size_t heEnd = heBase.twin;
-	for (; heIt != heEnd; heIt = this->twin(m_heData[heIt]).next){
-		assert(m_heData[heIt].vert == heTwin.vert);
-
-		// Associate to the other vertex now, so we can delete this one.
-		m_heData[heIt].vert = heBase.vert;
-	}
-
-	// Fix the vert associations if required, picking a non-hole face.
-	if (m_vertData[verts[0]] == m_heData[heBorder[1]].twin)
-		m_vertData[verts[0]] = (m_heData[heBorder[0]].face != HOLE_INDEX) ? heBorder[0] : m_heData[heBorder[1]].next;
-	if (m_vertData[verts[1]] == he || m_vertData[verts[1]] == heTwin.next)
-		m_vertData[verts[1]] = (m_heData[heBorder[1]].face != HOLE_INDEX) ? heBorder[1] : heBorder[2];
-	if (m_vertData[verts[2]] == m_heData[heBorder[2]].twin)
-		m_vertData[verts[2]] = (m_heData[heBorder[3]].face != HOLE_INDEX) ? heBorder[3] : m_heData[heBorder[2]].next;
-
-	// "Delete" the other vertex
-	m_vertData[heTwin.vert] = HOLE_INDEX;
-
-	// Collapse the two triangles bordering our chosen half-edge by connecting the opposite edges together.
-	m_heData[heBorder[0]].twin = heBorder[1];
-	m_heData[heBorder[1]].twin = heBorder[0];
-	m_heData[heBorder[2]].twin = heBorder[3];
-	m_heData[heBorder[3]].twin = heBorder[2];
-
-	// Have to delete the faces in the proper order.
-	if (fToDelete[0] < fToDelete[1])
-		std::swap(fToDelete[0], fToDelete[1]);
-
-	//Changed to lazy delete half edges to keep the index the same for convenience:
-	//this->delete_half_edges_impl(heToDelete);
-	detail::delete_face(m_faceData, m_heData, fToDelete[0]);
-	detail::delete_face(m_faceData, m_heData, fToDelete[1]);
-
-	// collect information about deleted and affected half edges for
-	// updating the heap
-	deletedHE.resize(6);
-	std::memcpy(deletedHE.data(), heToDelete, sizeof(heToDelete));
-	affectedHE.resize(0);
-	affectedHE.emplace_back(m_vertData[verts[1]]);
-	size_t HEInd = m_heData[m_heData[m_heData[affectedHE.front()].next].next].twin;
-	while (HEInd != affectedHE.front())
-	{
-		affectedHE.emplace_back(HEInd);
-		HEInd = m_heData[m_heData[m_heData[HEInd].next].next].twin;
-	}
-	return verts[1];
-}
-
-// ensure that the 2 vertices of the collapsed edge are not directly connected by
-// a 4th vertex, so it won't introduce non-manifold edges after collapsing
-// If the 2 vertices are only directly connected by 3 vertices, it is also viewed as incollapsable.
-bool EditMesh::collapsable(size_t edgeI)
-{
-	const half_edge& heBase = m_heData[edgeI];
-	const half_edge& heTwin = m_heData[heBase.twin];
-
-	std::size_t heBorder[4];
-	heBorder[0] = m_heData[heBase.next].twin;
-	heBorder[1] = m_heData[m_heData[heBase.next].next].twin;
-	heBorder[2] = m_heData[m_heData[heTwin.next].next].twin;
-	heBorder[3] = m_heData[heTwin.next].twin;
-
-	std::set<size_t> neighbor;
-	const half_edge* HEPtr = &m_heData[m_heData[heBorder[0]].next];
-	while (HEPtr != &m_heData[heBorder[2]])
-	{
-		assert(HEPtr->vert == heTwin.vert);
-
-		neighbor.insert(m_heData[HEPtr->next].vert);
-
-		HEPtr = &m_heData[m_heData[HEPtr->twin].next];
-	}
-
-	int n = 0;
-	HEPtr = &m_heData[m_heData[heBorder[3]].next];
-	while (HEPtr != &m_heData[heBorder[1]])
-	{
-		assert(HEPtr->vert == heBase.vert);
-
-		n++;
-		if (neighbor.find(m_heData[HEPtr->next].vert) != neighbor.end())
-		{
-			return false;
-		}
-
-		HEPtr = &m_heData[m_heData[HEPtr->twin].next];
-	}
-
-	if (neighbor.empty() && (n == 0))
-	{
-		return false;
-	}
-
-	return true;
+	meshSimplifier->InitProgressiveHull(false);
+	meshSimplifier->SimplifyProgressiveHull(threshold, decreaseTris, false);
+	meshSimplifier->CompactMesh();
 }
 
 // 2.2 Vertex Removal
@@ -2752,91 +2177,91 @@ double EditMesh::compute2PIMetric(size_t vertI)
 	return abs(2 * PI - angleSum);
 }
 
-// if at least 1 of the incident edges of a vertex is collapsible, then this vertex is removable
-int EditMesh::removable(size_t vertI)
-{
-	for (auto nbIter = umbrellaEdges[vertI].begin(); nbIter != umbrellaEdges[vertI].end(); nbIter++)
-	{
-		if (collapsable(m_heData[*nbIter].next))
-		{
-			return m_heData[*nbIter].next;
-		}
-	}
-	return -1;
-}
+// // if at least 1 of the incident edges of a vertex is collapsible, then this vertex is removable
+// int EditMesh::removable(size_t vertI)
+// {
+// 	for (auto nbIter = umbrellaEdges[vertI].begin(); nbIter != umbrellaEdges[vertI].end(); nbIter++)
+// 	{
+// 		if (collapsable(m_heData[*nbIter].next))
+// 		{
+// 			return m_heData[*nbIter].next;
+// 		}
+// 	}
+// 	return -1;
+// }
+//
+// // randomly select one of the collapsible incident edges to collapse
+// bool EditMesh::removeVertex(size_t vertI)
+// {
+// 	int eI = removable(vertI);
+// 	if (eI >= 0)
+// 	{
+// 		std::vector<size_t> affectedHE, deletedHE;
+// 		collapseEdge(eI, affectedHE, deletedHE, false);
+// 		return true;
+// 	}
+// 	else
+// 	{
+// 		return false;
+// 	}
+// }
 
-// randomly select one of the collapsible incident edges to collapse
-bool EditMesh::removeVertex(size_t vertI)
-{
-	int eI = removable(vertI);
-	if (eI >= 0)
-	{
-		std::vector<size_t> affectedHE, deletedHE;
-		collapseEdge(eI, affectedHE, deletedHE, false);
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-// procedure similar to collapseEdge
-void EditMesh::vertexRemoval(double threshold, int decreaseTris)
-{
-	if (editCount_vertRemov != edit_count) 
-	{
-		vertexToRemove.clear();
-		umbrellaEdges.resize(m_vertData.size());
-		for (size_t vertI = 0; vertI < m_vertData.size(); vertI++)
-		{
-			vertexToRemove.insert(vertI, -compute2PIMetric(vertI));
-		}
-
-		editCount_vertRemov = edit_count;
-	}
-
-	int leftTris;
-	if (decreaseTris < 0)
-	{
-		if (threshold > 1.0) { leftTris = threshold; threshold /= m_faceData.size(); }
-		else { leftTris = threshold * m_faceData.size(); }
-	}
-	else
-	{
-		leftTris = m_faceData.size() - decreaseTris;
-		threshold = double(leftTris) / m_faceData.size();
-	}
-
-	int removedVerts = 0;
-	while ((!vertexToRemove.empty()) && (m_faceData.size() > leftTris))
-	{
-		size_t vertI = vertexToRemove.top()->edge_index;
-		vertexToRemove.popTop();
-
-		assert(vertI < m_vertData.size());
-
-		if (removeVertex(vertI))
-		{
-			removedVerts++;
-
-			//update 1-ring neighbor vertex metric
-			for (auto nbIter = umbrellaEdges[vertI].begin(); nbIter != umbrellaEdges[vertI].end(); nbIter++)
-			{
-				size_t nbVI = m_heData[*nbIter].vert;
-				vertexToRemove.update(nbVI, -compute2PIMetric(nbVI));
-			}
-		}
-	}
-
-	while (!vertexToRemove.empty() && (removable(vertexToRemove.top()->edge_index) < 0))
-	{
-		vertexToRemove.popTop();
-	}
-
-	editCount_vertRemov++;
-	flag_edited();
-}
+// // procedure similar to collapseEdge
+// void EditMesh::vertexRemoval(double threshold, int decreaseTris)
+// {
+// 	if (editCount_vertRemov != edit_count) 
+// 	{
+// 		vertexToRemove.clear();
+// 		umbrellaEdges.resize(m_vertData.size());
+// 		for (size_t vertI = 0; vertI < m_vertData.size(); vertI++)
+// 		{
+// 			vertexToRemove.insert(vertI, -compute2PIMetric(vertI));
+// 		}
+//
+// 		editCount_vertRemov = edit_count;
+// 	}
+//
+// 	int leftTris;
+// 	if (decreaseTris < 0)
+// 	{
+// 		if (threshold > 1.0) { leftTris = threshold; threshold /= m_faceData.size(); }
+// 		else { leftTris = threshold * m_faceData.size(); }
+// 	}
+// 	else
+// 	{
+// 		leftTris = m_faceData.size() - decreaseTris;
+// 		threshold = double(leftTris) / m_faceData.size();
+// 	}
+//
+// 	int removedVerts = 0;
+// 	while ((!vertexToRemove.empty()) && (m_faceData.size() > leftTris))
+// 	{
+// 		size_t vertI = vertexToRemove.top()->edge_index;
+// 		vertexToRemove.popTop();
+//
+// 		assert(vertI < m_vertData.size());
+//
+// 		if (removeVertex(vertI))
+// 		{
+// 			removedVerts++;
+//
+// 			//update 1-ring neighbor vertex metric
+// 			for (auto nbIter = umbrellaEdges[vertI].begin(); nbIter != umbrellaEdges[vertI].end(); nbIter++)
+// 			{
+// 				size_t nbVI = m_heData[*nbIter].vert;
+// 				vertexToRemove.update(nbVI, -compute2PIMetric(nbVI));
+// 			}
+// 		}
+// 	}
+//
+// 	while (!vertexToRemove.empty() && (removable(vertexToRemove.top()->edge_index) < 0))
+// 	{
+// 		vertexToRemove.popTop();
+// 	}
+//
+// 	editCount_vertRemov++;
+// 	flag_edited();
+// }
 
 
 void EditMesh::writeMeshIntoObjFile(const char* filePath)

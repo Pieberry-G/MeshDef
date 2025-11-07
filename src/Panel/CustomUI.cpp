@@ -17,17 +17,23 @@ namespace MeshDef {
         ImGui::PushID("Mesh Process UI");
         ImGui::Begin("Mesh Process UI", nullptr);
 
-        if (ImGui::InputFloat("Threshold", &m_QSlimThreshold, 0.1f, 0.0f, "%.2f"))
+        ImGui::InputFloat("Threshold", &m_QSlimThreshold, 0.1f, 0.0f, "%.2f");
+
+        if (ImGui::Button("Simplify QSlim"))
         {
-            //if (m_QSlimThreshold < 0.0f)
-            //{
-            //    m_QSlimThreshold = 0.0f;
-            //}
+            AppUpdateEvent event("SimplifyQSlim");
+            m_EventCallback(event);
         }
 
-        if (ImGui::Button("Execute QSlim"))
+        if (ImGui::Button("Simplify OuterHull"))
         {
-            AppUpdateEvent event("ExecuteQSlim");
+            AppUpdateEvent event("SimplifyOuterHull");
+            m_EventCallback(event);
+        }
+
+        if (ImGui::Button("Simplify InnerHull"))
+        {
+            AppUpdateEvent event("SimplifyInnerHull");
             m_EventCallback(event);
         }
     }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "EditMesh.h"
+#include "Mesh/EditMesh.h"
 
 #include <Eigen/Dense>
 #include <Eigen/SparseLU>

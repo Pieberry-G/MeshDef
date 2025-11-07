@@ -15,7 +15,7 @@ namespace MeshDef {
 
 		bool OnKeyReleased(KeyReleasedEvent& e);
 
-		//void NewProject();
+		void NewProject();
 		//void ExportMesh();
 		//void ExportMeshPart();
 	};

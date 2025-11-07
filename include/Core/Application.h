@@ -22,7 +22,7 @@ namespace MeshDef {
 		bool OnAppUpdate(AppUpdateEvent& e);
 		bool OnAppRender(AppRenderEvent& e);
 
-		// std::unique_ptr<Scene>& GetScene() { return m_Scene; }
+		std::unique_ptr<Scene>& GetScene() { return m_Scene; }
 
 		static Application* Get() { return s_Instance; }
 

@@ -19,6 +19,9 @@
  * Utility and helper functions that operate on meshes or mesh data without a
  * specified Mesh instance.
  */
+
+#pragma once
+
 #include "Mesh/Model.h"
 #include "Mesh/EditMesh.h"
 #include "Mesh/OBJLoader.h"

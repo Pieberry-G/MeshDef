@@ -1,13 +1,26 @@
 #pragma once
 
-//#include "Mesh/NurbsFitting.h"
-//#include "Mesh/MeshDeformation.h"
-//
-//namespace MeshDef {
-//namespace State {
-//
-//	extern std::unordered_map<polyscope::PointCloud*, NurbsFitting*> controlPointToNurbs;
-//	extern std::unordered_map<polyscope::PointCloud*, MeshDeformation*> controlPointToDeformation;
-//
-//} // namespace State
-//} // namespace MeshDef
+namespace MeshDef {
+
+enum class OperationState
+{
+	None = 0,
+	LoadNewMesh,
+	SaveMesh,
+	SimplifyQSlim,
+	SimplifyOuterHull,
+	SimplifyInnerHull,
+	Deform,
+	DeformOneSolve,
+	SetDeform,
+	ResetDeform,
+	InputMovVec,
+	LoadControlMesh
+};
+
+namespace State {
+	
+	extern OperationState opState;
+
+} // namespace State
+} // namespace MeshDef

@@ -15,8 +15,7 @@
  */
 #pragma once
 
-#include "Quadric.h"
-#include "EdgeHeap.h"
+#include "Mesh/EdgeHeap.h"
 
 #include <glm/glm.hpp>
 
@@ -85,9 +84,13 @@ public:
 	EditMesh();
 	~EditMesh() 
 	{
-		if(meshDeformer)
+		if (meshDeformer)
 		{
 			delete meshDeformer;
+		}
+		if (meshSimplifier)
+		{
+			delete meshSimplifier;
 		}
 	}
 
@@ -142,28 +145,15 @@ public:
 
 
 	// assignment 2
-	void collapseEdge_QSlim(double threshold, int decreaseTris);
+	void SimplifyQSlim(double threshold, int decreaseTris);
+	void SimplifyOuterHull(double threshold, int decreaseTris);
+	void SimplifyInnerHull(double threshold, int decreaseTris);
 	void vertexRemoval(double threshold, int decreaseTris);
 	void writeMeshIntoObjFile(const char* filePath);
 
 protected: // QSlim
-	int editCount_QSlim;
-	EdgeHeap edgesToCollapse;
-	std::vector<Quadric> vertQuadrics;
-	std::vector<int> twinInside; //-1: self inside, edgeInd: twin inside, -2: neigther is inside
-	std::vector<Eigen::Vector3d> edgeBestPoses;
-
-	void initQSlim(void);
-	void getAdjacentTrisData(size_t edgeI, std::vector<Eigen::Vector3d>& adjacentTrisData, bool includeDirectFaces);
-	bool getMinErr(size_t edgeI, double& minErr);
-	bool solveLinearProgrammingForVertex(size_t v0I, size_t v1I, const std::vector<Eigen::Vector3d>& adjacentTrisData, Eigen::Vector3d& optimalPos, double& volumeIncrease);
-	
-	std::size_t collapseEdge(std::size_t he,
-		std::vector<size_t>& affectedHE,
-		std::vector<size_t>& deletedHE,
-		bool optimizePos = true);
-	bool collapsable(size_t edgeI);
-	void computeTriQ(size_t triI, Quadric& Q);
+	friend class MeshSimplifier3D;
+	MeshSimplifier3D* meshSimplifier = NULL;
 
 protected: // vertex removal
 	int editCount_vertRemov;
@@ -402,12 +392,12 @@ private:
 };
 
 inline EditMesh::EditMesh() 
-	: edit_count(0), editCount_QSlim(-1), editCount_vertRemov(-1), meshDeformer(NULL), deformState(DS_SETTING_FIXED_VERTS),
+	: edit_count(0), meshSimplifier(NULL), editCount_vertRemov(-1), meshDeformer(NULL), deformState(DS_SETTING_FIXED_VERTS),
 	arap(true), ctrlMeshPtr(NULL) {}
 
 inline void EditMesh::clear(){
 	edit_count = 0; 
-	editCount_QSlim = -1;
+	//editCount_QSlim = -1;
 
 	m_heData.clear();
 	m_faceData.clear();
@@ -626,4 +616,4 @@ inline void EditMesh::flag_edited(){
 	++edit_count;
 }
 
-} // namespace MeshDef
+} // namespace M

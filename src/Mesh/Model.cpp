@@ -55,8 +55,8 @@ void Model::UpdateDrawMesh()
 
     m_EditMesh->get_draw_data(v_data, i_data);
     m_EditMesh->get_draw_normals(&v_data[v_size]);
-    m_EditMesh->get_draw_selection(s_data);
-	m_EditMesh->get_draw_colors(c_data);
+ //    m_EditMesh->get_draw_selection(s_data);
+	// m_EditMesh->get_draw_colors(c_data);
 
     m_Vertices.clear();
     m_Faces.clear();

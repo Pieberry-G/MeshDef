@@ -14,7 +14,7 @@ namespace MeshDef {
             const Eigen::Vector3d v1_data = trisData[i + 1];
             const Eigen::Vector3d v2_data = trisData[i + 2];
             T_MESH::Vertex* v0 = mesh->newVertex(v0_data(0), v0_data(1), v0_data(2));
-            T_MESH::Vertex* v1 = mesh->newVertex(v1_data(0), v1_data(1), v1_data(2)); 
+            T_MESH::Vertex* v1 = mesh->newVertex(v1_data(0), v1_data(1), v1_data(2));
             T_MESH::Vertex* v2 = mesh->newVertex(v2_data(0), v2_data(1), v2_data(2));
 
             T_MESH::Edge* e0 = mesh->CreateEdge(v0, v1);
