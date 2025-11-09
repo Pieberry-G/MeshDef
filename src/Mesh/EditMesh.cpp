@@ -1086,6 +1086,7 @@ void EditMesh::get_draw_data( float *verts, int *indices ) const {
     /* get each vertex only once. This is good for efficiency
      * but results in bad looking meshes due to each vertex 
      * having a fixed normal
+    */
 
         for( std::size_t i = 0, iEnd = m_faceData.size(); i < iEnd; i++ ){
             const half_edge* he = &m_heData[ m_faceData[i] ];
@@ -1101,55 +1102,54 @@ void EditMesh::get_draw_data( float *verts, int *indices ) const {
             for( int j = 0; j < 3; j++)
                 verts[3*i+j] = (float) vert[j];
         }
-    */
 
-    // for each face
-    for( std::size_t i = 0, iEnd = m_faceData.size(); i < iEnd; i++ ){
-        const half_edge* he = &m_heData[ m_faceData[i] ];
-
-        // for each vertex of the face
-        for( int j = 0; j < 3; j++){
-            Eigen::Vector3d vert = get_vertex(he->vert);
-            indices[3*i+j] = 3*i+j;
-
-            // for each component of the vertex
-            for( int k = 0; k < 3; k++){
-				// this is where we convert from the double-precision of the data structure to float for the graphics card
-                verts[3*(3*i+j) + k] = static_cast<float>(vert[k]);
-            }
-            he = &this->next(*he);
-        }
-    }
+    // // for each face
+    // for( std::size_t i = 0, iEnd = m_faceData.size(); i < iEnd; i++ ){
+    //     const half_edge* he = &m_heData[ m_faceData[i] ];
+    //
+    //     // for each vertex of the face
+    //     for( int j = 0; j < 3; j++){
+    //         Eigen::Vector3d vert = get_vertex(he->vert);
+    //         indices[3*i+j] = 3*i+j;
+    //
+    //         // for each component of the vertex
+    //         for( int k = 0; k < 3; k++){
+				// // this is where we convert from the double-precision of the data structure to float for the graphics card
+    //             verts[3*(3*i+j) + k] = static_cast<float>(vert[k]);
+    //         }
+    //         he = &this->next(*he);
+    //     }
+    // }
 }
 
 void EditMesh::get_draw_normals( float *normals ) const {
 
     /* this finds the averaged vertex normals which results in
      * poor looking meshes when they are not smooth
+    */
 
         for( std::size_t i = 0, iEnd = m_vertData.size(); i < iEnd; i++ ){
-		    Eigen::Vector3d normal = this->get_normal( i );
+		    Eigen::Vector3d normal = this->get_vnormal( i );
             for( int j = 0; j < 3; j++)
                 normals[3*i+j] = (float) normal[j];
         }
-    */
 
-    for( std::size_t f = 0, iEnd = m_faceData.size(); f < iEnd; ++f ){
-		Eigen::Vector3d fnormal = this->get_fnormal( f );
-		//half_edge he = m_heData[ m_faceData[f] ];
-
-		 // for each vertex of the face
-        for( int j = 0; j < 3; j++){
-			//Eigen::Vector3d vnormal = this->get_vertex(he.vert);
-
-			 // for each component of the vertex
-            for( int k = 0; k < 3; k++){
-				// this is where we convert from the double-precision of the data structure to float for the graphics card
-                normals[3*(3*f+j) + k] = static_cast<float>(fnormal[k]);
-            }
-			//he = next(he);
-        }
-    }
+  //   for( std::size_t f = 0, iEnd = m_faceData.size(); f < iEnd; ++f ){
+		// Eigen::Vector3d fnormal = this->get_fnormal( f );
+		// //half_edge he = m_heData[ m_faceData[f] ];
+  //
+		//  // for each vertex of the face
+  //       for( int j = 0; j < 3; j++){
+		// 	//Eigen::Vector3d vnormal = this->get_vertex(he.vert);
+  //
+		// 	 // for each component of the vertex
+  //           for( int k = 0; k < 3; k++){
+		// 		// this is where we convert from the double-precision of the data structure to float for the graphics card
+  //               normals[3*(3*f+j) + k] = static_cast<float>(fnormal[k]);
+  //           }
+		// 	//he = next(he);
+  //       }
+  //   }
 }
 
 void EditMesh::get_draw_selection( int *selection ) const {
@@ -2096,7 +2096,7 @@ void EditMesh::subdiv_loop_withSelfDSUpdate(void)
 
 void EditMesh::SimplifyQSlim(double threshold, int decreaseTris)
 {
-	State::opState = OperationState::SimplifyQSlim;
+	State::cState.op = EditOperation::SimplifyQSlim;
 	
 	if (meshSimplifier == NULL)
 	{
@@ -2110,7 +2110,7 @@ void EditMesh::SimplifyQSlim(double threshold, int decreaseTris)
 
 void EditMesh::SimplifyOuterHull(double threshold, int decreaseTris)
 {
-	State::opState = OperationState::SimplifyOuterHull;
+	State::cState.op = EditOperation::SimplifyOuterHull;
 	
 	if (meshSimplifier == NULL)
 	{
@@ -2124,7 +2124,7 @@ void EditMesh::SimplifyOuterHull(double threshold, int decreaseTris)
 
 void EditMesh::SimplifyInnerHull(double threshold, int decreaseTris)
 {
-	State::opState = OperationState::SimplifyInnerHull;
+	State::cState.op = EditOperation::SimplifyInnerHull;
 
 	if (meshSimplifier == NULL)
 	{

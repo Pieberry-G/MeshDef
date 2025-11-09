@@ -46,7 +46,7 @@ void Model::getIndicesForFace(size_t tri_index, size_t indicesForFace[3])
 void Model::UpdateDrawMesh()
 {
     int i_size = 3 * m_EditMesh->get_face_size();
-    int v_size = 3 * i_size;//m_em->get_vert_size();
+    int v_size = 3 * m_EditMesh->get_vert_size();
 
     float *v_data = new float[v_size*2];// vertex and normal data
     int   *i_data = new int[i_size];	// face indexes
@@ -94,6 +94,24 @@ void Model::DrawMeshToPolyscope()
 
     m_PsMesh = polyscope::registerSurfaceMesh(m_Name, m_Vertices, m_Faces);
     m_PsMesh->setTransform(m_Transform);
+}
+
+void Model::DrawSelectedVertice()
+{
+    std::vector<glm::vec3> colors(m_EditMesh->get_vert_size());
+    for (int i = 0; i < m_EditMesh->get_vert_size(); i++)
+    {
+        if (m_EditMesh->isSelected(i))
+        {
+            colors[i] = glm::vec3(1.0f, 0.0f, 0.0f);
+        }
+        else
+        {
+            colors[i] = m_PsMesh->getSurfaceColor();
+        }
+    }
+    polyscope::SurfaceVertexColorQuantity* quantity = m_PsMesh->addVertexColorQuantity("Selected Vertices", colors);
+    quantity->setEnabled(true);
 }
 
 void Model::RemoveMeshFromPolyscope()

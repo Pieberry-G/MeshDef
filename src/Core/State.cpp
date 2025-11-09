@@ -3,7 +3,7 @@
 namespace MeshDef {
 namespace State {
 
-	OperationState opState = OperationState::None;
+	ControlState cState;
 
 } // namespace State
 } // namespace MeshDef

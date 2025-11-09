@@ -15,7 +15,8 @@ namespace MeshDef {
 		uint32_t GetWidth() const { return m_Width; }
 		uint32_t GetHeight() const { return m_Height; }
 
-		std::string ToString() const override {
+		std::string ToString() const override
+		{
 			std::stringstream ss;
 			ss << "WindowsResizeEvent: " << m_Width << ", " << m_Height;
 			return ss.str();
@@ -53,7 +54,8 @@ namespace MeshDef {
 
 		std::string GetCommand() const { return m_Command; }
 
-		std::string ToString() const override {
+		std::string ToString() const override
+		{
 			std::stringstream ss;
 			ss << "AppUpdateEvent: " << m_Command;
 			return ss.str();
@@ -73,7 +75,8 @@ namespace MeshDef {
 
 		std::string GetCommand() const { return m_Command; }
 
-		std::string ToString() const override {
+		std::string ToString() const override
+		{
 			std::stringstream ss;
 			ss << "AppRenderEvent: " << m_Command;
 			return ss.str();

@@ -3,13 +3,12 @@
 #include "Core/Application.h"
 
 #include <imgui.h>
-#include <filesystem>
 
 namespace MeshDef {
 
-    void MeshProcessUI::Init()
+    MeshProcessUI::MeshProcessUI()
     {
-
+        polyscope::state::userCallbacks.push_back(std::bind(&MeshProcessUI::DrawUI, this));
     }
 
     void MeshProcessUI::DrawUI()

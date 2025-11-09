@@ -3,11 +3,10 @@
 #include "EventSystem/KeyCodes.h"
 #include "EventSystem/MouseCodes.h"
 
-#include <iostream>
-
 namespace MeshDef {
 
-	enum class EventType {
+	enum class EventType
+	{
 		None = 0,
 		WindowClose, WindowResize, WindowFocus, WindowLostFocus, WindowMoved,
 		AppTick, AppUpdate, AppRender,
@@ -16,7 +15,8 @@ namespace MeshDef {
 	};
 
 #define BIT(x) (1 << x)
-	enum EventCategory {
+	enum EventCategory
+	{
 		None = 0,
 		EventCategoryApplication	= BIT(0),
 		EventCategoryInput			= BIT(1),

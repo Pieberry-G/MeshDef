@@ -16,14 +16,18 @@ namespace MeshDef {
 		Scene();
 		void Clean();
 
+		void Tick();
+
+		bool OnKeyPressed(KeyPressedEvent& e);
 		bool OnKeyReleased(KeyReleasedEvent& e);
+		bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
+		bool OnMouseButtonReleased(MouseButtonReleasedEvent& e);
+		bool OnMouseMoved(MouseMovedEvent& e);
 		bool OnAppUpdate(AppUpdateEvent& e);
 		bool OnAppRender(AppRenderEvent& e);
 
 		void LoadModelFromFile(const std::string& filepath);
 		
-		MeshProcessUI& GetMeshProcessUI() { return m_MeshProcessUI; }
-
 	protected:
 		void OnSimplifyQSlim();
 		void OnSimplifyOuterHull();
@@ -31,8 +35,6 @@ namespace MeshDef {
 
 	private:
 		std::unique_ptr<Model> m_Model;
-
-		MeshProcessUI m_MeshProcessUI;
 	};
 
 } // namespace MeshDef

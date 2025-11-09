@@ -27,7 +27,8 @@ namespace MeshDef {
 
 		bool IsRepeat() const { return m_IsRepeat; }
 
-		std::string ToString() const override {
+		std::string ToString() const override
+		{
 			std::stringstream ss;
 			ss << "KeyPressedEvent: " << m_KeyCode << "(repeat = " << m_IsRepeat << ")";
 			return ss.str();
@@ -44,7 +45,8 @@ namespace MeshDef {
 		KeyReleasedEvent(const KeyCode& keycode)
 			: KeyEvent(keycode) {}
 
-		std::string ToString() const override {
+		std::string ToString() const override
+		{
 			std::stringstream ss;
 			ss << "KeyReleasedEvent: " << m_KeyCode;
 			return ss.str();
@@ -59,7 +61,8 @@ namespace MeshDef {
 		KeyTypedEvent(const KeyCode& keycode)
 			: KeyEvent(keycode) {}
 
-		std::string ToString() const override {
+		std::string ToString() const override
+		{
 			std::stringstream ss;
 			ss << "KeyTypedEvent: " << m_KeyCode;
 			return ss.str();

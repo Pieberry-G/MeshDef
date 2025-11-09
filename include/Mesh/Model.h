@@ -19,6 +19,7 @@ public:
 
     void UpdateDrawMesh();
     void DrawMeshToPolyscope();
+    void DrawSelectedVertice();
     void RemoveMeshFromPolyscope();
 
     /***********************************************************

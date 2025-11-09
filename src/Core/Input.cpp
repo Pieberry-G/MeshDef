@@ -25,7 +25,7 @@ namespace MeshDef {
 		auto window = (GLFWwindow*)polyscope::render::engine->getNativeWindow();
 		double xpos, ypos;
 		glfwGetCursorPos(window, &xpos, &ypos);
-		return {(float)xpos, (float)ypos};
+		return {(float)xpos, (float)(polyscope::view::windowHeight - ypos)};
 	}
 
 	float Input::GetMouseX()

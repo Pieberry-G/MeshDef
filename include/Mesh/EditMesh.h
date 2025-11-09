@@ -153,7 +153,7 @@ public:
 
 protected: // QSlim
 	friend class MeshSimplifier3D;
-	MeshSimplifier3D* meshSimplifier = NULL;
+	MeshSimplifier3D* meshSimplifier;
 
 protected: // vertex removal
 	int editCount_vertRemov;
@@ -376,12 +376,12 @@ private:
 	int edit_count; // increment this value every change
 
 	// TODO: Switch to std::deque to avoid pointer invalidation when adding new half-edges.
-	std::vector< half_edge > m_heData;     // All the half-edges that make up the mesh.
-	std::vector< std::size_t > m_faceData; // A mapping from face index to an arbitrary half-edge on its boundary.
-	std::vector< std::size_t > m_vertData; // A mapping from vertex index to an arbitrary half-edge originating from this vertex. Can be "HOLE_INDEX" for unconnected vertices.
+	std::vector<half_edge> m_heData;     // All the half-edges that make up the mesh.
+	std::vector<std::size_t> m_faceData; // A mapping from face index to an arbitrary half-edge on its boundary.
+	std::vector<std::size_t> m_vertData; // A mapping from vertex index to an arbitrary half-edge originating from this vertex. Can be "HOLE_INDEX" for unconnected vertices.
 	
-    std::vector< bool > m_selected; // if a vertex is selected or not
-	std::vector< Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > m_vertices;
+    std::vector<bool> m_selected; // if a vertex is selected or not
+	std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> m_vertices;
 	
 	struct node{
 		double value;
@@ -392,8 +392,8 @@ private:
 };
 
 inline EditMesh::EditMesh() 
-	: edit_count(0), meshSimplifier(NULL), editCount_vertRemov(-1), meshDeformer(NULL), deformState(DS_SETTING_FIXED_VERTS),
-	arap(true), ctrlMeshPtr(NULL) {}
+	: edit_count(0), meshSimplifier(nullptr), editCount_vertRemov(-1), meshDeformer(nullptr), deformState(DS_SETTING_FIXED_VERTS),
+	arap(true), ctrlMeshPtr(nullptr) {}
 
 inline void EditMesh::clear(){
 	edit_count = 0; 
