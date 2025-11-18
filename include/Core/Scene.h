@@ -23,15 +23,15 @@ namespace MeshDef {
 		bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
 		bool OnMouseButtonReleased(MouseButtonReleasedEvent& e);
 		bool OnMouseMoved(MouseMovedEvent& e);
-		bool OnAppUpdate(AppUpdateEvent& e);
-		bool OnAppRender(AppRenderEvent& e);
+		bool OnMeshEdited(MeshEditedEvent& e);
 
 		void LoadModelFromFile(const std::string& filepath);
 		
 	protected:
-		void OnSimplifyQSlim();
-		void OnSimplifyOuterHull();
-		void OnSimplifyInnerHull();
+		void MeshSimplification(EditOperation op);
+		void MeshDeformation(EditOperation op);
+
+		void SelectVerts(int vertFlag);
 
 	private:
 		std::unique_ptr<Model> m_Model;

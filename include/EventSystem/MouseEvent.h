@@ -25,7 +25,8 @@ namespace MeshDef {
 		MouseButtonPressedEvent(const MouseCode button)
 			: MouseButtonEvent(button) {}
 
-		std::string ToString() const override {
+		std::string ToString() const override
+		{
 			std::stringstream ss;
 			ss << "MouseButtonPressedEvent: " << m_Button;
 			return ss.str();

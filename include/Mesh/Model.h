@@ -38,10 +38,10 @@ public:
     // expose your editmesh functions here
 
     // selection functions
-    void select_vert( size_t index )   { m_EditMesh->select_vert(index); }
+    void select_vert( size_t index, int vertFlag )   { m_EditMesh->select_vert(index, vertFlag); }
     void deselect_vert( size_t index ) { m_EditMesh->deselect_vert(index); }
     void deselect_verts()              { m_EditMesh->deselect_allVerts(); }
-    bool isSelected( size_t index )    { return m_EditMesh->isSelected(index); }
+    int getVertFlag( size_t index )    { return m_EditMesh->getVertFlag(index); }
 
     const EditMeshPtr GetEditMesh() const { return m_EditMesh; }
     void SetEditMesh(EditMeshPtr editMesh) { m_EditMesh = editMesh; }

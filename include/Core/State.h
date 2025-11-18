@@ -12,6 +12,11 @@ enum class EditOperation
 	SimplifyQSlim,
 	SimplifyOuterHull,
 	SimplifyInnerHull,
+	
+	SetVertConstraint,
+	FinishDeformation,
+
+	
 	Deform,
 	DeformOneSolve,
 	SetDeform,
@@ -20,16 +25,26 @@ enum class EditOperation
 	LoadControlMesh
 };
 
+inline std::string editOperationToString(EditOperation op)
+{
+	static const std::unordered_map<EditOperation, std::string> colorMap = {
+		{ EditOperation::SimplifyQSlim,		"SimplifyQSlim"		},
+		{ EditOperation::SimplifyOuterHull,	"SimplifyOuterHull"	},
+		{ EditOperation::SimplifyInnerHull,	"SimplifyInnerHull"	},
+	};
+	auto it = colorMap.find(op);
+	return it != colorMap.end() ? it->second : "Unknown";
+}
+
 class ControlState
 {
 public:
 	ControlState()
-		: op(EditOperation::None), selectActive(false), selectDirty(false) {}
+		: op(EditOperation::None), selectActive(false) {}
 	
 public:
 	EditOperation op;
 	bool selectActive;
-	bool selectDirty;  // requires processing
 	glm::vec2 selectStart;
 	glm::vec2 selectEnd;
 };

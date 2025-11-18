@@ -16,23 +16,37 @@ namespace MeshDef {
         ImGui::PushID("Mesh Process UI");
         ImGui::Begin("Mesh Process UI", nullptr);
 
-        ImGui::InputFloat("Threshold", &m_QSlimThreshold, 0.1f, 0.0f, "%.2f");
+        ImGui::InputFloat("Threshold", &m_SimplificationThreshold, 0.1f, 0.0f, "%.2f");
 
         if (ImGui::Button("Simplify QSlim"))
         {
-            AppUpdateEvent event("SimplifyQSlim");
+            MeshEditedEvent event(EditOperation::SimplifyQSlim);
             m_EventCallback(event);
         }
 
         if (ImGui::Button("Simplify OuterHull"))
         {
-            AppUpdateEvent event("SimplifyOuterHull");
+            MeshEditedEvent event(EditOperation::SimplifyOuterHull);
             m_EventCallback(event);
         }
 
         if (ImGui::Button("Simplify InnerHull"))
         {
-            AppUpdateEvent event("SimplifyInnerHull");
+            MeshEditedEvent event(EditOperation::SimplifyInnerHull);
+            m_EventCallback(event);
+        }
+
+        ImGui::Separator();
+
+        if (ImGui::Button("Set Vert Constraint"))
+        {
+            MeshEditedEvent event(EditOperation::SetVertConstraint);
+            m_EventCallback(event);
+        }
+
+        if (ImGui::Button("Finish Deformation"))
+        {
+            MeshEditedEvent event(EditOperation::FinishDeformation);
             m_EventCallback(event);
         }
     }

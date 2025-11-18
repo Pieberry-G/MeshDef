@@ -16,10 +16,10 @@ namespace MeshDef {
 		const EventCallbackFn& GetEventCallbackFn() const { return m_EventCallback; }
 		void SetEventCallback(const EventCallbackFn& callback) { m_EventCallback = callback; }
 
-		const float GetQSlimThreshold() const { return m_QSlimThreshold; }
+		const float GetSimplificationThreshold() const { return m_SimplificationThreshold; }
 
 	private:
-		float m_QSlimThreshold = -0.1f;
+		float m_SimplificationThreshold = 0.8f;
 
 		EventCallbackFn m_EventCallback;
 	};

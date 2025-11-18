@@ -22,8 +22,7 @@ namespace MeshDef {
 		bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
 		bool OnMouseButtonReleased(MouseButtonReleasedEvent& e);
 		bool OnMouseMoved(MouseMovedEvent& e);
-		bool OnAppUpdate(AppUpdateEvent& e);
-		bool OnAppRender(AppRenderEvent& e);
+		bool OnMeshEdited(MeshEditedEvent& e);
 
 		std::unique_ptr<Scene>& GetScene() { return m_Scene; }
 		const MeshProcessUI& GetMeshProcessUI() const { return m_MeshProcessUI; }

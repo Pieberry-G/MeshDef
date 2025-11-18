@@ -1,10 +1,32 @@
 #pragma once
 
 #include "EventSystem/Event.h"
+#include "Core/State.h"
 
 #include <sstream>
 
 namespace MeshDef {
+
+	class MeshEditedEvent : public Event
+	{
+	public:
+		MeshEditedEvent(const EditOperation& op)
+			: m_EditOperation(op) {}
+
+		EditOperation GetEditOperation() const { return m_EditOperation; }
+
+		std::string ToString() const override
+		{
+			std::stringstream ss;
+			ss << "MeshEditedEvent: " << editOperationToString(m_EditOperation);
+			return ss.str();
+		}
+
+		EVENT_CLASS_TYPE(MeshEdited)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
+	private:
+		EditOperation m_EditOperation;
+	};
 	
 	class WindowResizeEvent : public Event
 	{

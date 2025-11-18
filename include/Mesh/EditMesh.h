@@ -82,17 +82,7 @@ private:
 class EditMesh{
 public:
 	EditMesh();
-	~EditMesh() 
-	{
-		if (meshDeformer)
-		{
-			delete meshDeformer;
-		}
-		if (meshSimplifier)
-		{
-			delete meshSimplifier;
-		}
-	}
+	~EditMesh();
 
 	/**
 	 * Initialize the mesh from existing data.
@@ -195,12 +185,11 @@ protected:
 	DeformState deformState;
 	MeshDeformer3D *meshDeformer;
 	std::map<size_t, Eigen::Vector3d> constraint;
-	std::set<size_t> movingVerts;
-	std::set<size_t> fixedVerts;
+	// std::set<size_t> movingVerts;
+	// std::set<size_t> fixedVerts;
 	bool arap;
-	
-	void setFixedVertConstraint(void);
-	void setMovingVerts(void);
+public:
+	void SetVertConstraint();
 	void dragToDeform(const Eigen::Vector3d& movVec);
 
 
@@ -307,10 +296,10 @@ public:
 	void flag_edited();
 
     /* selection interface */
-    void select_vert( size_t index );
+    void select_vert( size_t index, int vertFlag );
     void deselect_vert( size_t index );
     void deselect_allVerts();
-    bool isSelected( size_t index );
+    int getVertFlag( size_t index );
 
     /* get information about internal state */
     std::size_t get_vert_size() const;
@@ -380,7 +369,7 @@ private:
 	std::vector<std::size_t> m_faceData; // A mapping from face index to an arbitrary half-edge on its boundary.
 	std::vector<std::size_t> m_vertData; // A mapping from vertex index to an arbitrary half-edge originating from this vertex. Can be "HOLE_INDEX" for unconnected vertices.
 	
-    std::vector<bool> m_selected; // if a vertex is selected or not
+    std::vector<int> m_selected; // if a vertex is selected or not
 	std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> m_vertices;
 	
 	struct node{
@@ -390,10 +379,6 @@ private:
 	// TODO: If we need arbitrary data, add a std::map< std::string, vector > that holds the per-vertex data. 
 	// TODO: Same for per-half-edge and per-face data.
 };
-
-inline EditMesh::EditMesh() 
-	: edit_count(0), meshSimplifier(nullptr), editCount_vertRemov(-1), meshDeformer(nullptr), deformState(DS_SETTING_FIXED_VERTS),
-	arap(true), ctrlMeshPtr(nullptr) {}
 
 inline void EditMesh::clear(){
 	edit_count = 0; 
@@ -567,13 +552,13 @@ inline const half_edge& EditMesh::twin( const half_edge& cur ) const {
 	return m_heData[ cur.twin ];
 }
 
-inline void EditMesh::select_vert( size_t index ) {
-    m_selected[index] = true;
+inline void EditMesh::select_vert( size_t index, int vertFlag ) {
+    m_selected[index] = vertFlag;
     flag_edited();
 }
 
 inline void EditMesh::deselect_vert( size_t index ) {
-    m_selected[index] = false;
+    m_selected[index] = 0;
     flag_edited();
 }
 
@@ -584,7 +569,7 @@ inline void EditMesh::deselect_allVerts() {
     flag_edited();
 }
 
-inline bool EditMesh::isSelected( size_t index ) {
+inline int EditMesh::getVertFlag( size_t index ) {
     return m_selected[index];
 }
 

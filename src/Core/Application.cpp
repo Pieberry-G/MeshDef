@@ -17,13 +17,6 @@ namespace MeshDef {
         
         polyscope::init();
         InitEventSystem();
-        
-        //polyscope::registerGroup("Gems");
-        //polyscope::registerGroup("GemSettings");
-
-        //TinyRenderer::RenderTool::Init();
-
-        //polyscope::state::edgeLengthScale = 0.3;
 
         m_Scene = std::make_unique<Scene>();
     }
@@ -42,8 +35,7 @@ namespace MeshDef {
         dispatcher.Dispatch<MouseButtonPressedEvent>(MD_BIND_EVENT_FN(Application::OnMouseButtonPressed));
         dispatcher.Dispatch<MouseButtonReleasedEvent>(MD_BIND_EVENT_FN(Application::OnMouseButtonReleased));
         dispatcher.Dispatch<MouseMovedEvent>(MD_BIND_EVENT_FN(Application::OnMouseMoved));
-        dispatcher.Dispatch<AppUpdateEvent>(MD_BIND_EVENT_FN(Application::OnAppUpdate));
-        dispatcher.Dispatch<AppRenderEvent>(MD_BIND_EVENT_FN(Application::OnAppRender));
+        dispatcher.Dispatch<MeshEditedEvent>(MD_BIND_EVENT_FN(Application::OnMeshEdited));
     }
 
     bool Application::OnWindowClose(WindowCloseEvent& e)
@@ -85,15 +77,9 @@ namespace MeshDef {
         return false;
     }
 
-    bool Application::OnAppUpdate(AppUpdateEvent& e)
+    bool Application::OnMeshEdited(MeshEditedEvent& e)
     {
-        if (m_Scene->OnAppUpdate(e)) { return true; }
-        return false;
-    }
-
-    bool Application::OnAppRender(AppRenderEvent& e)
-    {
-        if (m_Scene->OnAppRender(e)) { return true; }
+        if (m_Scene->OnMeshEdited(e)) { return true; }
         return false;
     }
 

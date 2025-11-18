@@ -98,20 +98,18 @@ void Model::DrawMeshToPolyscope()
 
 void Model::DrawSelectedVertice()
 {
-    std::vector<glm::vec3> colors(m_EditMesh->get_vert_size());
-    for (int i = 0; i < m_EditMesh->get_vert_size(); i++)
     {
-        if (m_EditMesh->isSelected(i))
+        std::vector<glm::vec3> colors(m_EditMesh->get_vert_size());
+        for (int i = 0; i < m_EditMesh->get_vert_size(); i++)
         {
-            colors[i] = glm::vec3(1.0f, 0.0f, 0.0f);
+            int vertFlag = m_EditMesh->getVertFlag(i);
+            if (vertFlag == 1) { colors[i] = glm::vec3(1.0f, 0.0f, 0.0f); }
+            else if (vertFlag == 2) { colors[i] = glm::vec3(0.0f, 0.0f, 1.0f); }
+            else { colors[i] = m_PsMesh->getSurfaceColor(); }
         }
-        else
-        {
-            colors[i] = m_PsMesh->getSurfaceColor();
-        }
+        polyscope::SurfaceVertexColorQuantity* quantity = m_PsMesh->addVertexColorQuantity("Selected Vertices", colors);
+        quantity->setEnabled(true);
     }
-    polyscope::SurfaceVertexColorQuantity* quantity = m_PsMesh->addVertexColorQuantity("Selected Vertices", colors);
-    quantity->setEnabled(true);
 }
 
 void Model::RemoveMeshFromPolyscope()
