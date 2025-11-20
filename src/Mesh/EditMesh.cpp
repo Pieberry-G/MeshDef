@@ -37,7 +37,7 @@
 
 namespace MeshDef {
 
-EditMesh *loadEditMeshFromFile(std::string file_name);
+EditMesh *LoadEditMeshFromOBJFile(std::string file_name);
 
 namespace detail{
 	inline void init( half_edge& he, std::size_t next, std::size_t twin, std::size_t vert, std::size_t face ){

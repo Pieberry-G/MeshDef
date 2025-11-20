@@ -1,6 +1,7 @@
 #include "Panel/CustomUI.h"
 
 #include "Core/Application.h"
+#include "Core/Scene.h"
 
 #include <imgui.h>
 
@@ -13,6 +14,8 @@ namespace MeshDef {
 
     void MeshProcessUI::DrawUI()
     {
+        std::unique_ptr<Scene>& scene = Application::Get()->GetScene();
+        
         ImGui::PushID("Mesh Process UI");
         ImGui::Begin("Mesh Process UI", nullptr);
 
@@ -20,34 +23,29 @@ namespace MeshDef {
 
         if (ImGui::Button("Simplify QSlim"))
         {
-            MeshEditedEvent event(EditOperation::SimplifyQSlim);
-            m_EventCallback(event);
+            scene->MeshSimplification(EditOperation::SimplifyQSlim);
         }
 
         if (ImGui::Button("Simplify OuterHull"))
         {
-            MeshEditedEvent event(EditOperation::SimplifyOuterHull);
-            m_EventCallback(event);
+            scene->MeshSimplification(EditOperation::SimplifyOuterHull);
         }
 
         if (ImGui::Button("Simplify InnerHull"))
         {
-            MeshEditedEvent event(EditOperation::SimplifyInnerHull);
-            m_EventCallback(event);
+            scene->MeshSimplification(EditOperation::SimplifyInnerHull);
         }
 
         ImGui::Separator();
 
         if (ImGui::Button("Set Vert Constraint"))
         {
-            MeshEditedEvent event(EditOperation::SetVertConstraint);
-            m_EventCallback(event);
+            scene->MeshDeformation(EditOperation::SetVertConstraint);
         }
 
         if (ImGui::Button("Finish Deformation"))
         {
-            MeshEditedEvent event(EditOperation::FinishDeformation);
-            m_EventCallback(event);
+            scene->MeshDeformation(EditOperation::FinishDeformation);
         }
     }
 

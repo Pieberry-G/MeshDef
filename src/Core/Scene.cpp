@@ -7,11 +7,21 @@
 
 namespace MeshDef {
 
+	namespace fs = std::filesystem;
+
 	Scene::Scene()
 	{
+		std::vector<glm::mat4> viewMatrices;
+		glm::mat4 projMatrix;
+		MeshDef::MakeCameras(viewMatrices, projMatrix);
+		
 		polyscope::state::tickSceneCallback = std::bind(&Scene::Tick, this);
 
-		LoadModelFromFile("../assets/meshes/cow1.obj");
+		LoadModel("../assets/meshes/owl.obj");
+
+		std::string outputPath = "../output/" + m_Model->GetName() + "/";
+		fs::create_directories(outputPath);
+		polyscope::renderMultiViewImages(m_Model->GetPsMesh(), viewMatrices, projMatrix, outputPath);
 	}
 
 	void Scene::Clean()
@@ -128,9 +138,9 @@ namespace MeshDef {
 		}
 	}
 
-	 void Scene::LoadModelFromFile(const std::string& filepath)
+	 void Scene::LoadModel(const std::string& filepath)
 	 {
-	 	m_Model = loadModelFromFile(filepath);
+	 	m_Model = LoadModelFromFile(filepath);
 	 	m_Model->DrawMeshToPolyscope();
 	 }
 

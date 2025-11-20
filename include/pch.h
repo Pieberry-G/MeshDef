@@ -2,6 +2,7 @@
 
 #include "Core/Base.h"
 
+#include <filesystem>
 #include <iostream>
 #include <memory>
 #include <utility>

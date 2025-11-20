@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Panel/CustomUI.h"
-
 #include "EventSystem/ApplicationEvent.h"
 #include "EventSystem/KeyEvent.h"
 #include "EventSystem/MouseEvent.h"
@@ -25,12 +23,11 @@ namespace MeshDef {
 		bool OnMouseMoved(MouseMovedEvent& e);
 		bool OnMeshEdited(MeshEditedEvent& e);
 
-		void LoadModelFromFile(const std::string& filepath);
-		
-	protected:
+		void LoadModel(const std::string& filePath);
 		void MeshSimplification(EditOperation op);
 		void MeshDeformation(EditOperation op);
-
+		
+	protected:
 		void SelectVerts(int vertFlag);
 
 	private:

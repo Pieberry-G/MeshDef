@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Panel/MainMenu.h"
+#include "Panel/CustomUI.h"
 #include "Core/Scene.h"
 
 #include "EventSystem/ApplicationEvent.h"

@@ -1,11 +1,11 @@
 #include "Panel/MainMenu.h"
 
 #include "Core/Application.h"
+#include "Core/Scene.h"
 #include "Core/WindowsPlatformUtils.h"
 
 #include <polyscope/polyscope.h>
 #include <imgui.h>
-#include <filesystem>
 
 namespace MeshDef {
 
@@ -110,7 +110,7 @@ namespace MeshDef {
             scene->Clean();
 
             MD_CORE_WARN("Loading Mesh file: {0}", filepath);
-            scene->LoadModelFromFile(filepath);
+            scene->LoadModel(filepath);
 
             polyscope::view::resetCameraToHomeView();
         }
@@ -136,11 +136,11 @@ namespace MeshDef {
 
     //static void WriteMeshPartWithOffset(std::shared_ptr<Mesh>& mesh, const std::string& name, std::ofstream& out, int& vertexOffset)
     //{
-    //    // ·Ö±ð´¦ÀíÑ¡ÖÐµÄÃæÆ¬ºÍÎ´Ñ¡ÖÐµÄÃæÆ¬
+    //    // ï¿½Ö±ï¿½ï¿½ï¿½Ñ¡ï¿½Ðµï¿½ï¿½ï¿½Æ¬ï¿½ï¿½Î´Ñ¡ï¿½Ðµï¿½ï¿½ï¿½Æ¬
     //    std::string selectedName = name + "_selected";
     //    std::string unselectedName = name + "_unselected";
 
-    //    // Ð´ÈëÑ¡ÖÐµÄÃæÆ¬
+    //    // Ð´ï¿½ï¿½Ñ¡ï¿½Ðµï¿½ï¿½ï¿½Æ¬
     //    out << "o " << selectedName << "\n";
     //    glm::mat4 transform = mesh->GetPsTransform();
     //    for (const auto& p : mesh->GetVertices()) {
@@ -148,9 +148,9 @@ namespace MeshDef {
     //        out << "v " << p_tf.x << " " << p_tf.y << " " << p_tf.z << "\n";
     //    }
 
-    //    // Ð´ÈëÑ¡ÖÐµÄÃæÆ¬
+    //    // Ð´ï¿½ï¿½Ñ¡ï¿½Ðµï¿½ï¿½ï¿½Æ¬
     //    for (size_t i = 0; i < mesh->GetFaces().size(); ++i) {
-    //        if (State::selectedRegion.Faces().find(i) != State::selectedRegion.Faces().end()) { // Èç¹û¸ÃÃæÆ¬±»Ñ¡ÖÐ
+    //        if (State::selectedRegion.Faces().find(i) != State::selectedRegion.Faces().end()) { // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¬ï¿½ï¿½Ñ¡ï¿½ï¿½
     //            out << "f";
     //            for (size_t index : mesh->GetFaces()[i]) {
     //                out << " " << (vertexOffset + index + 1);
@@ -159,10 +159,10 @@ namespace MeshDef {
     //        }
     //    }
 
-    //    // Ð´ÈëÎ´Ñ¡ÖÐµÄÃæÆ¬
+    //    // Ð´ï¿½ï¿½Î´Ñ¡ï¿½Ðµï¿½ï¿½ï¿½Æ¬
     //    out << "o " << unselectedName << "\n";
     //    for (size_t i = 0; i < mesh->GetFaces().size(); ++i) {
-    //        if (State::selectedRegion.Faces().find(i) == State::selectedRegion.Faces().end()) { // Èç¹û¸ÃÃæÆ¬Î´±»Ñ¡ÖÐ
+    //        if (State::selectedRegion.Faces().find(i) == State::selectedRegion.Faces().end()) { // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¬Î´ï¿½ï¿½Ñ¡ï¿½ï¿½
     //            out << "f";
     //            for (size_t index : mesh->GetFaces()[i]) {
     //                out << " " << (vertexOffset + index + 1);

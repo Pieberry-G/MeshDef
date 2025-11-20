@@ -11,8 +11,8 @@ typedef std::shared_ptr<EditMesh> EditMeshPtr;
 class Model
 {
 public:
-    Model();
-    Model(EditMeshPtr em);
+    Model(const std::string& name = "Default Mesh");
+    Model(EditMeshPtr em, const std::string& name = "Default Mesh");
     ~Model();
 
     void init();
@@ -43,8 +43,10 @@ public:
     void deselect_verts()              { m_EditMesh->deselect_allVerts(); }
     int getVertFlag( size_t index )    { return m_EditMesh->getVertFlag(index); }
 
+    const std::string& GetName() const { return m_Name; }
     const EditMeshPtr GetEditMesh() const { return m_EditMesh; }
     void SetEditMesh(EditMeshPtr editMesh) { m_EditMesh = editMesh; }
+    polyscope::SurfaceMesh* GetPsMesh() { return m_PsMesh; }
 
 protected:
     /***********************************************
@@ -60,7 +62,7 @@ protected:
 
     EditMeshPtr m_EditMesh;
 
-    std::string m_Name = "Default Mesh";
+    std::string m_Name;
     std::vector<glm::vec3> m_Vertices;
     std::vector<std::vector<size_t>> m_Faces;
     glm::mat4 m_Transform = glm::mat4(1.0f);  // object's model transformations

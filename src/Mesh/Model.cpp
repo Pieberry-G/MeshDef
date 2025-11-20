@@ -2,13 +2,15 @@
 
 namespace MeshDef {
 
-Model::Model() : last_drawn(-1), m_EditMesh(NULL)
+Model::Model(const std::string& name)
+    : last_drawn(-1), m_EditMesh(NULL), m_Name(name)
 {
     bboxMin.setZero();
     bboxMax.setZero();
 }
 
-Model::Model(EditMeshPtr editMesh) : last_drawn(-1), m_EditMesh(editMesh)
+Model::Model(EditMeshPtr editMesh, const std::string& name)
+    : last_drawn(-1), m_EditMesh(editMesh), m_Name(name)
 {
     bboxMin.setZero();
     bboxMax.setZero();

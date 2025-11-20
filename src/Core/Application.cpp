@@ -85,8 +85,6 @@ namespace MeshDef {
 
     void Application::InitEventSystem()
     {
-        m_MeshProcessUI.SetEventCallback(MD_BIND_EVENT_FN(Application::OnEvent));
-        
         auto window = (GLFWwindow*)polyscope::render::engine->getNativeWindow();
 
         static GLFWwindowsizefun originalWindowSizeCallback = glfwSetWindowSizeCallback(window, nullptr);
