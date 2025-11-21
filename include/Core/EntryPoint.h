@@ -11,38 +11,6 @@ int main()
 }
 
 
-// #include "torch/torch.h"
-// #include "torch/script.h"
-// #include <iostream>
-//  
-// int main()
-// {
-//     // 检查CUDA是否可用
-//     bool is_cuda_available = torch::cuda::is_available();
-//     std::cout << "CUDA available: " << (is_cuda_available ? "Yes" : "No") << std::endl;
-//     
-//     // 检查可用的GPU数量
-//     if(is_cuda_available) {
-//         int device_count = torch::cuda::device_count();
-//         std::cout << "Available GPU count: " << device_count << std::endl;
-//         
-//         // 检查cuDNN是否可用
-//         bool cudnn_available = torch::cuda::cudnn_is_available();
-//         std::cout << "cuDNN available: " << (cudnn_available ? "Yes" : "No") << std::endl;
-//     }
-//
-//     // 设置设备（如果CUDA可用则用GPU，否则用CPU）
-//     torch::Device device = is_cuda_available ? torch::kCUDA : torch::kCPU;
-//     std::cout << "Using device: " << (is_cuda_available ? "GPU" : "CPU") << std::endl;
-//
-//     // 在选择的设备上创建张量
-//     torch::Tensor output = torch::randn({5, 3}, device);
-//     std::cout << "Tensor on " << (is_cuda_available ? "GPU:" : "CPU:") << std::endl;
-//     std::cout << output << std::endl;
-// }
-
-
-
 // #include "detectIntersections.h"
 // #include <iostream>
 //

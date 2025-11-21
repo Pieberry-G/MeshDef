@@ -7,21 +7,35 @@
 
 namespace MeshDef {
 
-	namespace fs = std::filesystem;
-
-	Scene::Scene()
+	void Scene::RenderMultiViewImages(glm::vec2 imageSize)
 	{
 		std::vector<glm::mat4> viewMatrices;
 		glm::mat4 projMatrix;
-		MeshDef::MakeCameras(viewMatrices, projMatrix);
+		MakeCameras(viewMatrices, projMatrix);
 		
+		std::string outputDir = "../output/" + m_Model->GetName() + "/";
+		std::filesystem::create_directories(outputDir);
+		for (int i = 0; i < viewMatrices.size(); i++)
+		{
+			std::vector<glm::vec4> image = polyscope::renderMeshImage(m_Model->GetPsMesh(), viewMatrices[i], projMatrix, imageSize);
+			unsigned char* buffer = new unsigned char[imageSize.x * imageSize.y * 4];
+			for (size_t i = 0; i < image.size(); ++i) {
+				buffer[i * 4 + 0] = static_cast<unsigned char>(glm::clamp(image[i].r, 0.0f, 1.0f) * 255.0f); // R
+				buffer[i * 4 + 1] = static_cast<unsigned char>(glm::clamp(image[i].g, 0.0f, 1.0f) * 255.0f); // G
+				buffer[i * 4 + 2] = static_cast<unsigned char>(glm::clamp(image[i].b, 0.0f, 1.0f) * 255.0f); // B
+				buffer[i * 4 + 3] = static_cast<unsigned char>(glm::clamp(image[i].a, 0.0f, 1.0f) * 255.0f); // A
+			}
+			polyscope::saveImage(outputDir + std::to_string(i) + ".png", buffer, imageSize.x, imageSize.y, 4);
+			delete[] buffer;
+		}
+	}
+
+	Scene::Scene()
+	{
 		polyscope::state::tickSceneCallback = std::bind(&Scene::Tick, this);
 
 		LoadModel("../assets/meshes/owl.obj");
-
-		std::string outputPath = "../output/" + m_Model->GetName() + "/";
-		fs::create_directories(outputPath);
-		polyscope::renderMultiViewImages(m_Model->GetPsMesh(), viewMatrices, projMatrix, outputPath);
+		RenderMultiViewImages({512, 512});
 	}
 
 	void Scene::Clean()

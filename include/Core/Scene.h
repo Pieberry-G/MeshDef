@@ -26,6 +26,8 @@ namespace MeshDef {
 		void LoadModel(const std::string& filePath);
 		void MeshSimplification(EditOperation op);
 		void MeshDeformation(EditOperation op);
+
+		void RenderMultiViewImages(glm::vec2 imageSize = {1024, 1024});
 		
 	protected:
 		void SelectVerts(int vertFlag);

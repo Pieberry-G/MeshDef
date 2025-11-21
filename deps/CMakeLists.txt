@@ -20,16 +20,6 @@ target_include_directories(project_deps INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/o
 target_include_directories(project_deps INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/osi_clp/Osi/src")
 target_include_directories(project_deps INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/osi_clp/Osi/src/Osi")
 
-### LibTorch
-if(NOT TARGET CUDA::nvToolsExt)
-    add_library(CUDA::nvToolsExt INTERFACE IMPORTED)
-    message(STATUS "Created virtual CUDA::nvToolsExt target for CUDA 12+")
-endif()
-
-set(Torch_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libtorch/share/cmake/Torch")
-find_package(Torch REQUIRED)
-target_link_libraries(project_deps INTERFACE ${TORCH_LIBRARIES})
-
 set_target_properties(polyscope PROPERTIES FOLDER "Dependencies")
 set_target_properties(spdlog PROPERTIES FOLDER "Dependencies")
 set_target_properties(stb PROPERTIES FOLDER "Dependencies")
