@@ -5,6 +5,8 @@
 #include "EventSystem/Input.h"
 #include "Mesh/MeshUtils.h"
 
+#include "Core/WindowsPlatformUtils.h"
+
 namespace MeshDef {
 
 	void Scene::RenderMultiViewImages(glm::vec2 imageSize)
@@ -34,8 +36,11 @@ namespace MeshDef {
 	{
 		polyscope::state::tickSceneCallback = std::bind(&Scene::Tick, this);
 
-		LoadModel("../assets/meshes/owl.obj");
-		RenderMultiViewImages({512, 512});
+		LoadModel("../assets/meshes/cow1.obj");
+		//RenderMultiViewImages({512, 512});
+
+		SimpleMesh mesh(m_Model->GetEditMesh()->get_vertices(), m_Model->GetEditMesh()->get_faces());
+		InitializePython(mesh);
 	}
 
 	void Scene::Clean()

@@ -1,8 +1,10 @@
 #pragma once
 
-#include <string>
+#include "Mesh/SimpleMesh.h"
 
 namespace MeshDef {
+
+	void InitializePython(const SimpleMesh& mesh);
 
 	class FileDialogs
 	{

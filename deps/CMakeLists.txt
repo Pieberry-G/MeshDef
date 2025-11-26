@@ -9,6 +9,10 @@ target_link_libraries(project_deps INTERFACE polyscope spdlog)
 target_include_directories(project_deps INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/polyscope/deps/glad/include")
 target_include_directories(project_deps INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/polyscope/deps/stb")
 
+### Python
+add_subdirectory(pybind11)
+target_include_directories(project_deps INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/pybind11/include")
+
 ### Linear System
 add_subdirectory(osi_clp)
 add_subdirectory(MeshFix)

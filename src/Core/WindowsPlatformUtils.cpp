@@ -9,8 +9,35 @@
 #include <Windows.h>
 #include <commdlg.h>
 
+#include <codecvt>
+#include <pybind11/pybind11.h>
+#include <pybind11/embed.h>
+#include <pybind11/eigen.h>
 
 namespace MeshDef {
+
+	void InitializePython(const SimpleMesh& mesh)
+	{
+		std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+		std::wstring pythonHome = converter.from_bytes(PYTHON_HOME);
+
+		PyConfig config;
+		PyConfig_InitPythonConfig(&config);
+		PyConfig_SetString(&config, &config.home, pythonHome.c_str());
+
+		std::wstring condaEnvDllDir = pythonHome + L"/Library/bin";
+		SetDllDirectoryW(condaEnvDllDir.c_str());
+
+		pybind11::scoped_interpreter guard{ &config };
+		pybind11::module::import("sys").attr("path").attr("append")("../python");
+
+		try {
+			pybind11::module_::import("pytorch_processor").attr("fib")(mesh);
+		}
+		catch (const std::exception& e) {
+			std::cerr << "Error: " << e.what() << std::endl;
+		}
+	}
 
 	std::string FileDialogs::OpenFile(const char* filter)
 	{

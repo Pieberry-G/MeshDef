@@ -165,7 +165,7 @@ namespace MeshDef {
         }
 
         m = new EditMesh();
-        m->init(xyzPositions, triangleIndices);
+        m->Init(xyzPositions, triangleIndices);
 
         return m;
     }

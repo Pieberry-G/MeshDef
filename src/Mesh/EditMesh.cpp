@@ -37,6 +37,10 @@
 
 namespace MeshDef {
 
+#ifndef PI
+#define PI 3.14159265359
+#endif
+
 EditMesh *LoadEditMeshFromOBJFile(std::string file_name);
 
 namespace detail{
@@ -216,7 +220,8 @@ EditMesh::~EditMesh()
 	}
 }
 
-void EditMesh::init( const std::vector<double>& xyzPositions, const std::vector<std::size_t>& triangleVerts ){
+void EditMesh::Init( const std::vector<double>& xyzPositions, const std::vector<std::size_t>& triangleVerts )
+{
 	assert( xyzPositions.size() % 3 == 0 && "Invalid vertex positions for EditMesh::init(). Must have 3 values per-vertex." );
 	assert( triangleVerts.size() % 3 == 0 && "Invalid face data for EditMesh::init(). Must have 3 vertex indices per face." );
 
@@ -1097,54 +1102,40 @@ Eigen::Vector3d EditMesh::getFaceMidpoint(size_t tri_index) {
     return average / count;
 }
 
-void EditMesh::get_draw_data( float *verts, int *indices ) const {
-
-    /* get each vertex only once. This is good for efficiency
-     * but results in bad looking meshes due to each vertex 
-     * having a fixed normal
-    */
-
-        for( std::size_t i = 0, iEnd = m_faceData.size(); i < iEnd; i++ ){
-            const half_edge* he = &m_heData[ m_faceData[i] ];
-
-            for( int j = 0; j < 3; j++){
-                indices[3*i +j] = he->vert;
-                he = &this->next(*he);
-            }
-        }
-
-        for( std::size_t i = 0, iEnd = m_vertData.size(); i < iEnd; i++ ){
-		    Eigen::Vector3d vert = this->get_vertex( i );
-            for( int j = 0; j < 3; j++)
-                verts[3*i+j] = (float) vert[j];
-        }
-
-    // // for each face
-    // for( std::size_t i = 0, iEnd = m_faceData.size(); i < iEnd; i++ ){
-    //     const half_edge* he = &m_heData[ m_faceData[i] ];
-    //
-    //     // for each vertex of the face
-    //     for( int j = 0; j < 3; j++){
-    //         Eigen::Vector3d vert = get_vertex(he->vert);
-    //         indices[3*i+j] = 3*i+j;
-    //
-    //         // for each component of the vertex
-    //         for( int k = 0; k < 3; k++){
-				// // this is where we convert from the double-precision of the data structure to float for the graphics card
-    //             verts[3*(3*i+j) + k] = static_cast<float>(vert[k]);
-    //         }
-    //         he = &this->next(*he);
-    //     }
-    // }
+Eigen::MatrixXd EditMesh::get_vertices() const
+{
+	Eigen::MatrixXd vertices(m_vertData.size(), 3);
+    for (std::size_t i = 0, iEnd = m_vertData.size(); i < iEnd; i++)
+    {
+    	vertices.row(i) = this->get_vertex(i);
+    }
+	return vertices;
 }
 
-void EditMesh::get_draw_normals( float *normals ) const {
+Eigen::MatrixXi EditMesh::get_faces() const
+{
+	Eigen::MatrixXi faces(m_faceData.size(), 3);
+	for (std::size_t i = 0, iEnd = m_faceData.size(); i < iEnd; i++)
+	{
+		const half_edge* he = &m_heData[m_faceData[i]];
+		for (int j = 0; j < 3; j++)
+		{
+			faces(i, j) = he->vert;
+			he = &this->next(*he);
+		}
+	}
+	return faces;
+}
+
+void EditMesh::get_normals(float *normals) const
+{
 
     /* this finds the averaged vertex normals which results in
      * poor looking meshes when they are not smooth
     */
 
-        for( std::size_t i = 0, iEnd = m_vertData.size(); i < iEnd; i++ ){
+        for( std::size_t i = 0, iEnd = m_vertData.size(); i < iEnd; i++ )
+        {
 		    Eigen::Vector3d normal = this->get_vnormal( i );
             for( int j = 0; j < 3; j++)
                 normals[3*i+j] = (float) normal[j];
@@ -1168,7 +1159,7 @@ void EditMesh::get_draw_normals( float *normals ) const {
   //   }
 }
 
-void EditMesh::get_draw_selection( int *selection ) const {
+void EditMesh::get_selection( int *selection ) const {
     for( std::size_t i = 0, iEnd = m_faceData.size(); i < iEnd; i++ ){
         size_t verts[3];
         getIndicesForFace(i, verts);
@@ -1179,7 +1170,7 @@ void EditMesh::get_draw_selection( int *selection ) const {
     }
 }
 
-void EditMesh::get_draw_colors(float* colors) {
+void EditMesh::get_colors(float* colors) {
 	// for each face
 	for (std::size_t f = 0, iEnd = m_faceData.size(); f < iEnd; ++f){
 		size_t he_idx = m_faceData[f];
@@ -1334,7 +1325,7 @@ void EditMesh::test_flip() {
     faces.push_back(2); faces.push_back(2);
     faces.push_back(1); faces.push_back(3);
 
-    this->init(xyz, faces);
+    this->Init(xyz, faces);
 
     half_edge *he = &m_heData[0];
     for( size_t i = 0; i < m_heData.size(); ++i ) {
@@ -1435,7 +1426,7 @@ void EditMesh::test(){
 	f.push_back( 4 ); f.push_back( 5 ); f.push_back( 3 );
 	f.push_back( 3 ); f.push_back( 5 ); f.push_back( 2 );
 
-	m1.init( v, f );
+	m1.Init( v, f );
 
 	for( std::size_t i = 0, iEnd = v.size(); i < iEnd; i += 3 )
 		assert( m2.add_vertex( v[i], v[i+1], v[i+2] ) == i/3 );
