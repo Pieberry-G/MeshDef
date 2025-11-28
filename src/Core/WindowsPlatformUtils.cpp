@@ -16,7 +16,7 @@
 
 namespace MeshDef {
 
-	void InitializePython(const SimpleMesh& mesh)
+	void InitializePython(const DeformMesh& mesh)
 	{
 		std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
 		std::wstring pythonHome = converter.from_bytes(PYTHON_HOME);
@@ -32,7 +32,8 @@ namespace MeshDef {
 		pybind11::module::import("sys").attr("path").attr("append")("../python");
 
 		try {
-			pybind11::module_::import("pytorch_processor").attr("fib")(mesh);
+			pybind11::module_::import("pytorch_processor").attr("process_mesh")(mesh);
+			// pybind11::module_::import("pytorch_processor").attr("deform_cow")();
 		}
 		catch (const std::exception& e) {
 			std::cerr << "Error: " << e.what() << std::endl;

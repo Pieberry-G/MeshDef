@@ -1,7 +1,7 @@
 """Demos the use of ARAP energy as a loss function"""
 
 import numpy as np
-from pytorch_arap.arap import ARAP_from_meshes, add_one_ring_neighbours,add_n_ring_neighbours
+from pytorch_arap.arap import create_ARAP_meshes, ARAP_from_meshes, add_one_ring_neighbours,add_n_ring_neighbours
 from pytorch_arap.arap import compute_energy as arap_loss
 from pytorch3d.io import load_objs_as_meshes, save_obj
 import os
@@ -34,7 +34,7 @@ class Model(torch.nn.Module):
 
 	def set_target(self, handle_verts, handle_pos):
 		self.handle_verts = handle_verts
-		self.handle_pos = handle_pos.to(self.device)
+		self.handle_pos = handle_pos.to(device)
 
 	def forward(self):
 
@@ -47,7 +47,6 @@ class Model(torch.nn.Module):
 def deform_smal():
 
 	targ = os.path.join("sample_meshes", "smal.obj")
-	targ = os.path.join("../assets/meshes", "cow1.obj")
 	meshes = load_objs_as_meshes([targ], load_textures=False)
 	meshes = ARAP_from_meshes(meshes, device=device) # convert to ARAP obejct
 	N = meshes.num_verts_per_mesh()[0]
@@ -98,8 +97,61 @@ def deform_smal():
 
 	save_obj("./sad.obj", model.verts[0], faces[0])
 
+def deform_cow():
+
+	vertices = np.load("../build/vertices.npy")
+	faces = np.load("../build/faces.npy")
+	fixed_vert_indices = np.load("../build/fixed_vert_indices.npy")
+	moving_vert_indices = np.load("../build/moving_vert_indices.npy")
+	target_positions = np.load("../build/target_positions.npy")
+
+	print(vertices.dtype)
+	print(faces.dtype)
+	print(fixed_vert_indices.dtype)
+	print(moving_vert_indices.dtype)
+	print(target_positions.dtype)
+
+	meshes = create_ARAP_meshes(torch.from_numpy(vertices.astype(np.float32)), torch.from_numpy(faces.astype(np.int64)), device=device)
+	N = meshes.num_verts_per_mesh()[0]
+
+	# handle as topmost vert
+	handle_verts = moving_vert_indices.tolist()
+	handle_pos = meshes.verts_padded()[0][handle_verts]
+	handle_pos_shifted = torch.from_numpy(target_positions.astype(np.float32))
+
+	# static as base
+	static_verts = fixed_vert_indices.tolist()
+
+	faces = meshes.faces_list()
+
+	prop = True
+	trisurfs = plot_meshes(ax, meshes.verts_list(), faces, handle_verts=handle_verts, static_verts=static_verts, prop=prop, change_lims=True,
+						   color="gray", zoom=1.5)
+
+	verts_template = meshes.verts_padded()
+
+	model = Model(meshes, verts_template, device=device)
+	model.set_target(handle_verts, handle_pos_shifted)
+
+	optimiser = torch.optim.Adam(model.parameters(), lr = 5e-3)
+
+	n_frames = 50
+	progress = tqdm(total=n_frames)
+
+	for i in range(n_frames):	
+		optimiser.zero_grad()
+		loss = model()
+		loss.backward()
+		optimiser.step()
+
+		progress.n = progress.last_print_n = i+1
+		progress.set_description(f"Loss = {loss:.4f}")
+
+	save_obj("./good.obj", model.verts[0], faces[0])
+
 if __name__ == "__main__":
 
 	fig, ax = plt.subplots(subplot_kw=dict(projection="3d"))
 
-	deform_smal()
+	#deform_smal()
+	deform_cow()

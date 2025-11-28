@@ -39,8 +39,8 @@ namespace MeshDef {
 		LoadModel("../assets/meshes/cow1.obj");
 		//RenderMultiViewImages({512, 512});
 
-		SimpleMesh mesh(m_Model->GetEditMesh()->get_vertices(), m_Model->GetEditMesh()->get_faces());
-		InitializePython(mesh);
+		// DeformTarget mesh(m_Model->GetEditMesh()->get_vertices(), m_Model->GetEditMesh()->get_faces());
+		// InitializePython(mesh);
 	}
 
 	void Scene::Clean()
@@ -205,11 +205,48 @@ namespace MeshDef {
 			case EditOperation::FinishDeformation:
 			{
 				m_Model->GetEditMesh()->dragToDeform({ 0.5, 0, 0});
+					
+				const EditMeshPtr editMesh = m_Model->GetEditMesh();
+
+				int nFixedVerts = 0, nMovingVerts = 0;
+				for (int i = 0; i < editMesh->get_vert_size(); i++)
+				{
+					int vertFlag = editMesh->getVertFlag(i);
+					switch (vertFlag)
+					{
+						case 1: ++nFixedVerts; break;
+						case 2: ++nMovingVerts; break;
+					}
+				}
+
+				Eigen::VectorXi fixedVertIndices(nFixedVerts);
+				Eigen::VectorXi movingVertIndices(nMovingVerts);
+				Eigen::MatrixXd targetPositions(nMovingVerts, 3);
+
+				int fI = 0, mI = 0;
+				for (int i = 0; i < editMesh->get_vert_size(); i++)
+				{
+					int vertFlag = editMesh->getVertFlag(i);
+					switch (vertFlag)
+					{
+						case 1: fixedVertIndices(fI++) = i; break;
+						case 2: targetPositions.row(mI) = editMesh->get_vertex(i); movingVertIndices(mI++) = i; break;
+					}
+				}
+
+				DeformMesh mesh;
+				mesh.setVertices(editMesh->get_vertices());
+				mesh.setFaces(editMesh->get_faces());
+				mesh.setFixedVertIndices(fixedVertIndices);
+				mesh.setMovingVertIndices(movingVertIndices);
+				mesh.setTargetPositions(targetPositions);
+
+				InitializePython(mesh);
+
+				m_Model->DrawMeshToPolyscope();
 				break;
 			}
 		}
-		
-		m_Model->DrawMeshToPolyscope();
 	}
 
 	void Scene::SelectVerts(int vertFlag)

@@ -28,6 +28,9 @@ except ImportError:
 	print("torch_batch_svd not installed. Using torch.svd instead")
 	batch_svd = torch.svd
 
+def create_ARAP_meshes(verts, faces, textures=None, device="cuda"):
+	"""Create ARAPMeshes object from verts and faces"""
+	return ARAPMeshes(verts=[verts], faces=[faces], textures=textures, device=device)
 
 def ARAP_from_meshes(meshes, device="cuda"):
 	"""Produce ARAPMeshes object from Meshes object

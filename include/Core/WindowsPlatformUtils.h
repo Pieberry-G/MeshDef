@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Mesh/SimpleMesh.h"
+#include "Mesh/DeformMesh.h"
 
 namespace MeshDef {
 
-	void InitializePython(const SimpleMesh& mesh);
+	void InitializePython(const DeformMesh& mesh);
 
 	class FileDialogs
 	{

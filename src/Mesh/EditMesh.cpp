@@ -453,7 +453,7 @@ std::size_t EditMesh::collapse_edge( std::size_t he)
 		std::clog << "m.collapse_edge( " << base << ", " << twin << " );" << std::endl;
 
 		EditMesh m;
-		m.init( vpos, finds );
+		m.Init( vpos, finds );
 		std::ofstream fout( "debug.obj" );
 		m.write_to_obj_stream( fout );
 		fout.close();
@@ -1159,8 +1159,10 @@ void EditMesh::get_normals(float *normals) const
   //   }
 }
 
-void EditMesh::get_selection( int *selection ) const {
-    for( std::size_t i = 0, iEnd = m_faceData.size(); i < iEnd; i++ ){
+void EditMesh::get_selection(int *selection) const
+{
+    for (std::size_t i = 0, iEnd = m_faceData.size(); i < iEnd; i++)
+    {
         size_t verts[3];
         getIndicesForFace(i, verts);
 
