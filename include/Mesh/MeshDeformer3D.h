@@ -147,7 +147,7 @@ public: // operations
 		double lastRes = 0.0;
 		std::vector<double> residuals;
 		int i = 0;
-		for( ; i < maxIter; i++)
+		for (; i < maxIter; i++)
 		{
 			residual = getRHSAndSolve(constraint);
 			if((residual < targetResidual) ||
@@ -164,13 +164,13 @@ public: // operations
 	{
 		Eigen::SparseMatrix<double> coefMtr(oldVertCoord.size(), oldVertCoord.size());
 		Eigen::VectorXi reserveSizes(oldVertCoord.size());
-		for(size_t rowI = 0; rowI < reserveSizes.size(); rowI++)
+		for (size_t rowI = 0; rowI < reserveSizes.size(); rowI++)
 		{
 			reserveSizes[rowI] = vvNeighbor[rowI].size() + 1;
 			assert(reserveSizes[rowI] > 2);
 		}
 		coefMtr.reserve(reserveSizes);
-		for(size_t rowI = 0; rowI < coefMtr.outerSize(); rowI++)
+		for (size_t rowI = 0; rowI < coefMtr.outerSize(); rowI++)
 		{
 			size_t vertI = rowI;
 			double diagVal = 0.0;
@@ -212,11 +212,11 @@ public: // operations
 	void updateValidTrans(void)
 	{
 		//tbb::parallel_for(0, (int)oldVertCoord.size(), 1, [&](int rowI)
-		for(int rowI = 0; rowI < (int)oldVertCoord.size(); rowI++)
+		for (int rowI = 0; rowI < (int)oldVertCoord.size(); rowI++)
 		{
 			Eigen::Matrix3d J = Eigen::Matrix3d::Zero();
 			size_t vertI = rowI;
-			for(auto nbIter = vvNeighbor[vertI].begin(); nbIter != vvNeighbor[vertI].end(); nbIter++)
+			for (auto nbIter = vvNeighbor[vertI].begin(); nbIter != vvNeighbor[vertI].end(); nbIter++)
 			{
 				Eigen::Vector3d u(mesh.m_vertices[*nbIter] - mesh.m_vertices[vertI]);
 				Eigen::Vector3d v(oldVertCoord[*nbIter] - oldVertCoord[vertI]);
@@ -239,7 +239,7 @@ public: // operations
 		{
 			size_t vertI = rowI;
 			RHS[0][rowI] = RHS[1][rowI] = RHS[2][rowI] = 0.0;
-			for(auto nbIter = vvNeighbor[vertI].begin(); nbIter != vvNeighbor[vertI].end(); nbIter++)
+			for (auto nbIter = vvNeighbor[vertI].begin(); nbIter != vvNeighbor[vertI].end(); nbIter++)
 			{
 				const Eigen::Vector3d edgeVec(oldVertCoord[vertI]-oldVertCoord[*nbIter]);
 				const Eigen::Vector3d rHSVec = (getHETan(vertI, *nbIter) + getHETan(*nbIter, vertI)) / 2.0 * 
@@ -278,7 +278,7 @@ public: // operations
 		}
 
 		double change = 0.0;
-		for(int rowI = 0; rowI < oldVertCoord.size(); rowI++)
+		for (int rowI = 0; rowI < oldVertCoord.size(); rowI++)
 		{
 			size_t vertI = rowI;
 			change += abs(mesh.m_vertices[vertI][0] - solved[0][rowI]);

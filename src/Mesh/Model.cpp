@@ -70,6 +70,24 @@ namespace MeshDef {
         quantity->setEnabled(true);
     }
 
+    void Model::ShowVertices(const std::vector<size_t>& vertices)
+    {
+        double vertexRadius = 0.01;
+        glm::vec<3, float> ORANGE_VEC = {1, 0.65, 0};
+        
+        // Show selected vertices.
+        std::vector<glm::vec3> vertPos;
+        std::vector<std::array<size_t, 2>> vertInd;
+        for (size_t vert : vertices)
+        {
+            vertPos.push_back(m_PsMesh->vertices[vert]);
+        }
+        polyscope::SurfaceGraphQuantity* showVerts = m_PsMesh->addSurfaceGraphQuantity("Moving Cones", vertPos, vertInd);
+        showVerts->setEnabled(true);
+        showVerts->setRadius(vertexRadius);
+        showVerts->setColor(ORANGE_VEC);
+    }
+
     void Model::RemoveMeshFromPolyscope()
     {
         if (!m_PsMesh) { return; }

@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.13.0)
+ 
+add_library(MovingCones_deps INTERFACE)
+
+add_subdirectory(suitesparse)
+add_subdirectory(OpenMesh)
+target_link_libraries(MovingCones_deps INTERFACE suitesparse OpenMesh)

@@ -20,6 +20,7 @@ namespace MeshDef {
 
         void DrawMeshToPolyscope();
         void DrawSelectedVertice();
+        void ShowVertices(const std::vector<size_t>& vertices);
         void RemoveMeshFromPolyscope();
 
         /***********************************************************

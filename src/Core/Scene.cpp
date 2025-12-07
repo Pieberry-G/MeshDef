@@ -5,7 +5,8 @@
 #include "EventSystem/Input.h"
 #include "Mesh/MeshUtils.h"
 
-#include "Core/WindowsPlatformUtils.h"
+#include "ConeOptimization.h"
+#include "MeshDefinition.h"
 
 namespace MeshDef {
 
@@ -32,15 +33,63 @@ namespace MeshDef {
 		}
 	}
 
+	static void saveCones(const std::vector<double>& conesK, std::string conesPath, Mesh& mesh, double eps = 1e-9)
+	{
+		std::ofstream conesFile(conesPath);
+		if (conesFile.fail())
+		{
+			std::cout << "Open " << conesPath << "failed\n";
+			exit(EXIT_FAILURE);
+		}
+
+		for (int i = 0; i < conesK.size(); ++i)
+		{
+			if ((conesK[i] > -eps && conesK[i] < eps)||mesh.is_boundary(mesh.vertex_handle(i))) continue;
+			conesFile << i + 1 << " " << conesK[i] << std::endl;
+		}
+		conesFile.close();
+	}
+
+	void Scene::CalMovingCones()
+	{
+		double distortion = 0.3;
+		
+		Mesh mesh;
+		MeshTools::CreateMesh(mesh, m_Model->GetEditMesh()->getVertices(), m_Model->GetEditMesh()->getFaces());
+
+		clock_t start, end;
+		ConeOptimization ConeOpt;
+		start = clock();
+		ConeOpt.Initialization(mesh, distortion);
+		ConeOpt.Optimization();
+		end = clock();
+		double costTime = (double)(end - start) / CLOCKS_PER_SEC;
+		std::cout << "Cost time : " << costTime << "\n";
+		saveCones(ConeOpt.kc, "-cones.txt", mesh);
+
+		double eps = 1e-9;
+		std::vector<size_t> vertices;
+		for (int i = 0; i < ConeOpt.kc.size(); ++i)
+		{
+			if ((ConeOpt.kc[i] > -eps && ConeOpt.kc[i] < eps)||mesh.is_boundary(mesh.vertex_handle(i))) continue;
+			vertices.push_back(i);
+		}
+		m_Model->ShowVertices(vertices);
+	}
+
 	Scene::Scene()
 	{
 		polyscope::state::tickSceneCallback = std::bind(&Scene::Tick, this);
 
 		LoadModel("../assets/meshes/cow1.obj");
-		//RenderMultiViewImages({512, 512});
+		//LoadModel("../assets/data/kitten.obj");
 
 		// DeformTarget mesh(m_Model->GetEditMesh()->get_vertices(), m_Model->GetEditMesh()->get_faces());
 		// InitializePython(mesh);
+
+		CalMovingCones();
+		
+		RenderMultiViewImages({512, 512});
 	}
 
 	void Scene::Clean()
@@ -206,42 +255,42 @@ namespace MeshDef {
 			{
 				m_Model->GetEditMesh()->dragToDeform({ 0.5, 0, 0});
 					
-				const EditMeshPtr editMesh = m_Model->GetEditMesh();
-
-				int nFixedVerts = 0, nMovingVerts = 0;
-				for (int i = 0; i < editMesh->get_vert_size(); i++)
-				{
-					int vertFlag = editMesh->getVertFlag(i);
-					switch (vertFlag)
-					{
-						case 1: ++nFixedVerts; break;
-						case 2: ++nMovingVerts; break;
-					}
-				}
-
-				Eigen::VectorXi fixedVertIndices(nFixedVerts);
-				Eigen::VectorXi movingVertIndices(nMovingVerts);
-				Eigen::MatrixXd targetPositions(nMovingVerts, 3);
-
-				int fI = 0, mI = 0;
-				for (int i = 0; i < editMesh->get_vert_size(); i++)
-				{
-					int vertFlag = editMesh->getVertFlag(i);
-					switch (vertFlag)
-					{
-						case 1: fixedVertIndices(fI++) = i; break;
-						case 2: targetPositions.row(mI) = editMesh->get_vertex(i); movingVertIndices(mI++) = i; break;
-					}
-				}
-
-				DeformMesh mesh;
-				mesh.setVertices(editMesh->get_vertices());
-				mesh.setFaces(editMesh->get_faces());
-				mesh.setFixedVertIndices(fixedVertIndices);
-				mesh.setMovingVertIndices(movingVertIndices);
-				mesh.setTargetPositions(targetPositions);
-
-				InitializePython(mesh);
+				// const EditMeshPtr editMesh = m_Model->GetEditMesh();
+				//
+				// int nFixedVerts = 0, nMovingVerts = 0;
+				// for (int i = 0; i < editMesh->get_vert_size(); i++)
+				// {
+				// 	int vertFlag = editMesh->getVertFlag(i);
+				// 	switch (vertFlag)
+				// 	{
+				// 		case 1: ++nFixedVerts; break;
+				// 		case 2: ++nMovingVerts; break;
+				// 	}
+				// }
+				//
+				// Eigen::VectorXi fixedVertIndices(nFixedVerts);
+				// Eigen::VectorXi movingVertIndices(nMovingVerts);
+				// Eigen::MatrixXd targetPositions(nMovingVerts, 3);
+				//
+				// int fI = 0, mI = 0;
+				// for (int i = 0; i < editMesh->get_vert_size(); i++)
+				// {
+				// 	int vertFlag = editMesh->getVertFlag(i);
+				// 	switch (vertFlag)
+				// 	{
+				// 		case 1: fixedVertIndices(fI++) = i; break;
+				// 		case 2: targetPositions.row(mI) = editMesh->get_vertex(i); movingVertIndices(mI++) = i; break;
+				// 	}
+				// }
+				//
+				// DeformMesh mesh;
+				// mesh.setVertices(editMesh->get_vertices());
+				// mesh.setFaces(editMesh->get_faces());
+				// mesh.setFixedVertIndices(fixedVertIndices);
+				// mesh.setMovingVertIndices(movingVertIndices);
+				// mesh.setTargetPositions(targetPositions);
+				//
+				// InitializePython(mesh);
 
 				m_Model->DrawMeshToPolyscope();
 				break;

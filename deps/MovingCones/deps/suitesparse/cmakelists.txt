@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.13.0)
+
+add_library(suitesparse INTERFACE)
+
+file(GLOB STATIC_LIBS "${CMAKE_CURRENT_SOURCE_DIR}/lib/*.lib")
+target_link_libraries(suitesparse INTERFACE ${STATIC_LIBS})
+
+target_include_directories(suitesparse INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/suitesparse)

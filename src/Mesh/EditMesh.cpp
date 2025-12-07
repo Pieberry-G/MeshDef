@@ -206,7 +206,7 @@ void init_adjacency( std::size_t numVertices, const std::vector<std::size_t>& fa
 
 EditMesh::EditMesh() 
 	: edit_count(0), meshSimplifier(nullptr), editCount_vertRemov(-1), meshDeformer(nullptr), deformState(DS_SETTING_FIXED_VERTS),
-	arap(true), ctrlMeshPtr(nullptr) {}
+	arap(false), ctrlMeshPtr(nullptr) {}
 
 EditMesh::~EditMesh()
 {
@@ -1121,6 +1121,34 @@ Eigen::MatrixXi EditMesh::get_faces() const
 		for (int j = 0; j < 3; j++)
 		{
 			faces(i, j) = he->vert;
+			he = &this->next(*he);
+		}
+	}
+	return faces;
+}
+
+std::vector<std::array<double, 3>>  EditMesh::getVertices() const
+{
+	std::vector<std::array<double, 3>>  vertices(m_vertData.size());
+	for (std::size_t i = 0, iEnd = m_vertData.size(); i < iEnd; i++)
+	{
+		for (int j = 0; j < 3; j++)
+		{
+			vertices[i][j] = this->get_vertex(i)(j);
+		}
+	}
+	return vertices;
+}
+
+std::vector<std::array<int, 3>> EditMesh::getFaces() const
+{
+	std::vector<std::array<int, 3>> faces(m_faceData.size());
+	for (std::size_t i = 0, iEnd = m_faceData.size(); i < iEnd; i++)
+	{
+		const half_edge* he = &m_heData[m_faceData[i]];
+		for (int j = 0; j < 3; j++)
+		{
+			faces[i][j] = he->vert;
 			he = &this->next(*he);
 		}
 	}
@@ -2327,7 +2355,7 @@ void EditMesh::SetVertConstraint()
 		else if (m_selected[vertI] == 2)
 		{
 			nMovingVerts++;
-			constraint[vertI] = Eigen::Vector3d();
+			constraint[vertI] = meshDeformer->getOldVertCoord(vertI);
 		}
 	}
 	//deselect_allVerts();

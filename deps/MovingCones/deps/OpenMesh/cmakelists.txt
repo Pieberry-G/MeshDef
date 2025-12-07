@@ -1,0 +1,11 @@
+cmake_minimum_required(VERSION 3.13.0)
+
+add_library(OpenMesh INTERFACE)
+
+file(GLOB STATIC_LIBS "${CMAKE_CURRENT_SOURCE_DIR}/lib/*.lib")
+target_link_libraries(OpenMesh INTERFACE
+    $<$<CONFIG:Debug>:${CMAKE_CURRENT_SOURCE_DIR}/lib/OpenMeshCored.lib>
+    $<$<CONFIG:Debug>:${CMAKE_CURRENT_SOURCE_DIR}/lib/OpenMeshToolsd.lib>
+    $<$<NOT:$<CONFIG:Debug>>:${CMAKE_CURRENT_SOURCE_DIR}/lib/OpenMeshCore.lib>
+    $<$<NOT:$<CONFIG:Debug>>:${CMAKE_CURRENT_SOURCE_DIR}/lib/OpenMeshTools.lib>
+)

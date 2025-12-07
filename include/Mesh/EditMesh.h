@@ -289,6 +289,8 @@ namespace MeshDef {
 		 * memory. Used for rendering so loss of precision unimportant */
 		Eigen::MatrixXd get_vertices() const;
 		Eigen::MatrixXi get_faces() const;
+		std::vector<std::array<double, 3>>  EditMesh::getVertices() const;
+		std::vector<std::array<int, 3>>  EditMesh::getFaces() const;
 		void get_normals(float *normals) const;
 		void get_selection(int *selection) const;
 		void get_colors(float *colors);
