@@ -12,9 +12,6 @@ target_compile_definitions(MovingCones PUBLIC "$<$<CONFIG:RELEASE>:NDEBUG>")
 
 add_subdirectory(deps)
 target_link_libraries(MovingCones MovingCones_deps)
-target_include_directories(MovingCones PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/deps>
-    $<INSTALL_INTERFACE:include>
-)
+target_include_directories(MovingCones PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/deps)
 
 file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/deps/suitesparse/bin/" DESTINATION "${CMAKE_BINARY_DIR}")

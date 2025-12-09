@@ -89,7 +89,7 @@ namespace MeshDef {
 
 		CalMovingCones();
 		
-		RenderMultiViewImages({512, 512});
+		RenderMultiViewImages();
 	}
 
 	void Scene::Clean()
@@ -118,6 +118,9 @@ namespace MeshDef {
 		{
 			case Key::A:
 				State::cState.selectActive = false;
+				return true;
+			case Key::R:
+				RenderMultiViewImages();
 				return true;
 		}
 		return false;

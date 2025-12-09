@@ -4,10 +4,15 @@ add_library(project_deps INTERFACE)
 
 ### Common Dependencies
 add_subdirectory(polyscope)
+add_subdirectory(ImGuizmo)
+target_link_libraries(ImGuizmo PRIVATE imgui)
+target_link_libraries(polyscope PUBLIC ImGuizmo)
+target_link_libraries(project_deps INTERFACE polyscope)
+
 add_subdirectory(spdlog)
-target_link_libraries(project_deps INTERFACE polyscope spdlog)
+target_link_libraries(project_deps INTERFACE spdlog)
 target_include_directories(project_deps INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/polyscope/deps/glad/include")
-target_include_directories(project_deps INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/polyscope/deps/stb")
+# target_include_directories(project_deps INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/polyscope/deps/stb")
 
 add_subdirectory(MovingCones)
 target_link_libraries(project_deps INTERFACE MovingCones)
