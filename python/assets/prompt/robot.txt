@@ -1,0 +1,27 @@
+You are an expert in analyzing robotic manipulation tasks.
+Attached is a 'storyboard' image, which contains a sequence of numbered keyframes $keyframes extracted from a video.
+Each keyframe is annotated as either "min" or "max": "max" typically indicates the "MOVE_TO" phase (i.e., transition or approach before interaction), while "min" corresponds to the execution phase (such as grasping, manipulating, or releasing). When analyzing each keyframe, please incorporate these annotations to accurately determine the functional role of the frame within the task sequence.
+These keyframes capture the critical moments of the task: $global_task_description.
+
+Your Goal: Analyze the entire sequence holistically and output a single JSON object. This JSON should be a list, where each element corresponds to one keyframe and describes the interaction event at that moment.
+
+For EACH Keyframe, provide the following structured information:
+    Step 1: Sub-Task Description: Describe the specific action happening in the keyframe. 
+        - Examples: "Hand moves towards the pen", "Hand grasps the pen", "Pen is being moved towards the holder".
+    Step 2: Sub-Task action Classification: Classify this action into one of the following primitives:
+        - 'MOVE_TO': A free-space motion to approach an object. (Typically corresponds to 'Transition-Keyframe').
+        - 'GRASP': Making initial stable contact to pick up an object. (Typically corresponds to 'Interaction-Keyframe').
+        - 'MANIPULATE': Other contact-rich actions like placing, pushing, inserting, rotating, stirring. (Typically corresponds to 'Interaction-Keyframe').
+        - 'RELEASE': Breaking contact to place or drop an object. (Typically corresponds to 'Interaction-Keyframe').
+    Step 3: Sub-Task Role and Part Identification: Identify the key roles for this specific sub-task:
+        Constraint: All identified entities or parts must be physically locatable surfaces or geometric features on the object mesh. Do NOT use parts that are not visible (e.g. "inner surface", "backside", "underside"); Do NOT use abstract concepts representing empty space (e.g., avoid "opening", "hole", "air"). Instead, reference the physical boundary defining that space (e.g., use "rim", "edge", "neck", "body", "handle").
+        - 'active_entity': The primary object that will/is moving or interacting.
+        - 'active_part': The functionally most important part of the 'active_entity' for this sub-task.
+        - 'anchor_entity': The stable reference or target object for the sub-task.
+        - 'anchor_part': The functionally most important part of the 'anchor_entity' for this sub-task.
+    Step 4: Symmetry Analysis (ONLY for `MOVE_TO` primitive): If the action primitive is `MOVE_TO`, analyze the symmetry of the upcoming interaction.
+        - Assume the Z-axis is the primary geometric or functional axis of the 'anchor_part'.
+        -   'anisotropy_in_xy_plane': Is the approach direction in the XY-plane constrained ('ANISOTROPIC') or flexible ('ISOTROPIC')?
+        -   'xy_plane_symmetry': If 'ISOTROPIC', what is the symmetry group of the 'anchor_part's interaction surface ('SO(2)', 'D_n', 'C_n')? Provide 'n'. If 'ANISOTROPIC', this can be null or 'Trivial'.
+
+Final JSON Output Format: A dict of JSON objects, one key for one keyframe.

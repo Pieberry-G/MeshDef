@@ -4,77 +4,26 @@
 #include "Core/State.h"
 #include "EventSystem/Input.h"
 #include "Mesh/MeshUtils.h"
+#include "Mesh/MultiViewCameras.h"
 
-#include "ConeOptimization.h"
-#include "MeshDefinition.h"
+#include <pybind11/pybind11.h>
 
 namespace MeshDef {
 
-	void Scene::RenderMultiViewImages(glm::vec2 imageSize)
-	{
-		std::vector<glm::mat4> viewMatrices;
-		glm::mat4 projMatrix;
-		MakeCameras(viewMatrices, projMatrix);
-		
-		std::string outputDir = "../output/" + m_Model->GetName() + "/";
-		std::filesystem::create_directories(outputDir);
-		for (int i = 0; i < viewMatrices.size(); i++)
-		{
-			std::vector<glm::vec4> image = polyscope::renderMeshImage(m_Model->GetPsMesh(), viewMatrices[i], projMatrix, imageSize);
-			unsigned char* buffer = new unsigned char[imageSize.x * imageSize.y * 4];
-			for (size_t i = 0; i < image.size(); ++i) {
-				buffer[i * 4 + 0] = static_cast<unsigned char>(glm::clamp(image[i].r, 0.0f, 1.0f) * 255.0f); // R
-				buffer[i * 4 + 1] = static_cast<unsigned char>(glm::clamp(image[i].g, 0.0f, 1.0f) * 255.0f); // G
-				buffer[i * 4 + 2] = static_cast<unsigned char>(glm::clamp(image[i].b, 0.0f, 1.0f) * 255.0f); // B
-				buffer[i * 4 + 3] = static_cast<unsigned char>(glm::clamp(image[i].a, 0.0f, 1.0f) * 255.0f); // A
-			}
-			polyscope::saveImage(outputDir + std::to_string(i) + ".png", buffer, imageSize.x, imageSize.y, 4);
-			delete[] buffer;
-		}
-	}
-
-	static void saveCones(const std::vector<double>& conesK, std::string conesPath, Mesh& mesh, double eps = 1e-9)
-	{
-		std::ofstream conesFile(conesPath);
-		if (conesFile.fail())
-		{
-			std::cout << "Open " << conesPath << "failed\n";
-			exit(EXIT_FAILURE);
-		}
-
-		for (int i = 0; i < conesK.size(); ++i)
-		{
-			if ((conesK[i] > -eps && conesK[i] < eps)||mesh.is_boundary(mesh.vertex_handle(i))) continue;
-			conesFile << i + 1 << " " << conesK[i] << std::endl;
-		}
-		conesFile.close();
-	}
-
 	void Scene::CalMovingCones()
 	{
-		double distortion = 0.3;
+		std::vector<size_t> candidateHandles = CalculateCandidateHandles(m_Model->GetEditMesh()->getVertices(), m_Model->GetEditMesh()->getFaces());
+		m_Model->ShowCandidateHandles(candidateHandles);
 		
-		Mesh mesh;
-		MeshTools::CreateMesh(mesh, m_Model->GetEditMesh()->getVertices(), m_Model->GetEditMesh()->getFaces());
+		MultiViewCameras cameras = MakeMultiViewCameras();
+		std::string imagesDir = "../output/" + m_Model->GetName() + "/CandidateHandles/";
+		m_Model->RenderMultiViewImages({1024, 1024}, cameras, imagesDir);
 
-		clock_t start, end;
-		ConeOptimization ConeOpt;
-		start = clock();
-		ConeOpt.Initialization(mesh, distortion);
-		ConeOpt.Optimization();
-		end = clock();
-		double costTime = (double)(end - start) / CLOCKS_PER_SEC;
-		std::cout << "Cost time : " << costTime << "\n";
-		saveCones(ConeOpt.kc, "-cones.txt", mesh);
+		//std::vector<size_t> selectedHandlesIndex = SelectHandlesByVLM(imagesDir);
+		std::vector<size_t> selectedHandlesIndex = { 7, 13 };
 
-		double eps = 1e-9;
-		std::vector<size_t> vertices;
-		for (int i = 0; i < ConeOpt.kc.size(); ++i)
-		{
-			if ((ConeOpt.kc[i] > -eps && ConeOpt.kc[i] < eps)||mesh.is_boundary(mesh.vertex_handle(i))) continue;
-			vertices.push_back(i);
-		}
-		m_Model->ShowVertices(vertices);
+		m_Model->RemoveAllQuantities();
+		m_Model->ShowSelectedHandles(candidateHandles, selectedHandlesIndex);
 	}
 
 	Scene::Scene()
@@ -88,8 +37,7 @@ namespace MeshDef {
 		// InitializePython(mesh);
 
 		CalMovingCones();
-		
-		RenderMultiViewImages();
+		// SelectHandles();
 	}
 
 	void Scene::Clean()
@@ -119,9 +67,9 @@ namespace MeshDef {
 			case Key::A:
 				State::cState.selectActive = false;
 				return true;
-			case Key::R:
-				RenderMultiViewImages();
-				return true;
+			// case Key::R:
+			// 	RenderMultiViewImages();
+			// 	return true;
 		}
 		return false;
 	}

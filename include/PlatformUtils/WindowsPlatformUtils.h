@@ -4,8 +4,6 @@
 
 namespace MeshDef {
 
-	void InitializePython(const DeformMesh& mesh);
-
 	class FileDialogs
 	{
 	public:

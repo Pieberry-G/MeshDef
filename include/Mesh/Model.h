@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Mesh/EditMesh.h"
+#include "Mesh/MultiViewCameras.h"
 
 #include <polyscope/polyscope.h>
 #include <polyscope/surface_mesh.h>
@@ -20,8 +21,12 @@ namespace MeshDef {
 
         void DrawMeshToPolyscope();
         void DrawSelectedVertice();
-        void ShowVertices(const std::vector<size_t>& vertices);
+        void ShowCandidateHandles(const std::vector<size_t>& candidateHandles);
+        void RemoveAllQuantities();
+        void ShowSelectedHandles(const std::vector<size_t>& candidateHandles, const std::vector<size_t>& selectedHandles);
         void RemoveMeshFromPolyscope();
+        
+        void RenderMultiViewImages(glm::vec2 imageSize, const MultiViewCameras& cameras, const std::string& outputDir);
 
         /***********************************************************
          * the reflection interface to get mesh information

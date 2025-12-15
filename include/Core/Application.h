@@ -3,6 +3,7 @@
 #include "Panel/MainMenu.h"
 #include "Panel/CustomUI.h"
 #include "Core/Scene.h"
+#include "PlatformUtils/PythonInterpreter.h"
 
 #include "EventSystem/ApplicationEvent.h"
 #include "EventSystem/KeyEvent.h"
@@ -34,6 +35,8 @@ namespace MeshDef {
 		void InitEventSystem();
 		
 	private:
+		PythonInterpreter pythonInterpreter;
+		
 		MainMenu m_MainMenu;
 		MeshProcessUI m_MeshProcessUI;
 		

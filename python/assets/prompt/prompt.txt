@@ -1,0 +1,4 @@
+You are an expert in analyzing mesh parts tasks.
+Attached is a image rendered from one direction, which includes an RGB coordinate axis system: red for X, green for Y, and blue for Z.
+
+Your Goal: Analyze the entire imput and output a single JSON object. This JSON should be a list, where each element corresponds to a part name of the mesh.

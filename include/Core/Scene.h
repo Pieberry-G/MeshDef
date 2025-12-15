@@ -27,8 +27,9 @@ namespace MeshDef {
 		void MeshSimplification(EditOperation op);
 		void MeshDeformation(EditOperation op);
 
-		void RenderMultiViewImages(glm::vec2 imageSize = {1024, 1024});
+		void RenderMultiViewImages(glm::vec2 imageSize, const std::string& outputDir, bool drawQuantities);
 		void CalMovingCones();
+		void SelectHandles();
 		
 	protected:
 		void SelectVerts(int vertFlag);

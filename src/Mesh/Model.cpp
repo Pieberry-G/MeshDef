@@ -1,5 +1,7 @@
 #include "Mesh/Model.h"
 
+#include "Mesh/MultiViewCameras.h"
+
 namespace MeshDef {
 
     Model::Model(const std::string& name)
@@ -70,22 +72,79 @@ namespace MeshDef {
         quantity->setEnabled(true);
     }
 
-    void Model::ShowVertices(const std::vector<size_t>& vertices)
+    void Model::ShowCandidateHandles(const std::vector<size_t>& candidateHandles)
     {
-        double vertexRadius = 0.01;
-        glm::vec<3, float> ORANGE_VEC = {1, 0.65, 0};
-        
-        // Show selected vertices.
-        std::vector<glm::vec3> vertPos;
-        std::vector<std::array<size_t, 2>> vertInd;
-        for (size_t vert : vertices)
+        double vertexRadius = 0.015;
+        std::vector<glm::vec3> colors = {
+            { 1.0f, 0.0f, 0.0f },   // 红色 - Red
+            { 0.0f, 1.0f, 0.0f },   // 绿色 - Green
+            { 0.0f, 0.0f, 1.0f },   // 蓝色 - Blue
+            { 1.0f, 1.0f, 0.0f },   // 黄色 - Yellow
+            { 1.0f, 0.0f, 1.0f },   // 品红 - Magenta
+            { 0.0f, 1.0f, 1.0f },   // 青色 - Cyan
+            { 1.0f, 0.5f, 0.0f },   // 橙色 - Orange
+            { 0.5f, 0.0f, 1.0f },   // 紫色 - Purple
+            { 0.0f, 1.0f, 0.5f },   // 青绿 - Teal
+            { 1.0f, 0.5f, 0.5f },   // 粉红 - Pink
+            { 0.5f, 1.0f, 0.0f },   // 黄绿 - Lime
+            { 0.0f, 0.5f, 1.0f },   // 天蓝 - Sky Blue
+            { 1.0f, 0.0f, 0.5f },   // 玫红 - Rose
+            { 0.5f, 0.5f, 1.0f },   // 淡紫 - Lavender
+            { 1.0f, 1.0f, 0.5f },   // 浅黄 - Light Yellow
+            { 0.5f, 1.0f, 1.0f },   // 淡青 - Light Cyan
+        };
+
+        MD_CORE_ASSERT(candidateHandles.size() <= 16);
+        for (int i = 0; i < candidateHandles.size(); i++)
         {
-            vertPos.push_back(m_PsMesh->vertices[vert]);
+            // Show selected vertices.
+            std::vector<glm::vec3> vertPos = { m_PsMesh->vertices[candidateHandles[i]]};
+            std::vector<std::array<size_t, 2>> vertInd;
+            polyscope::SurfaceGraphQuantity* showVerts = m_PsMesh->addSurfaceGraphQuantity("Candidate Handles (" + std::to_string(i) + ")", vertPos, vertInd);
+            showVerts->setEnabled(true);
+            showVerts->setRadius(vertexRadius);
+            showVerts->setColor(colors[i]);
         }
-        polyscope::SurfaceGraphQuantity* showVerts = m_PsMesh->addSurfaceGraphQuantity("Moving Cones", vertPos, vertInd);
-        showVerts->setEnabled(true);
-        showVerts->setRadius(vertexRadius);
-        showVerts->setColor(ORANGE_VEC);
+    }
+
+    void Model::RemoveAllQuantities()
+    {
+        m_PsMesh->removeAllQuantities();
+    }
+
+    void Model::ShowSelectedHandles(const std::vector<size_t>& candidateHandles, const std::vector<size_t>& selectedHandlesIndices)
+    {
+        double vertexRadius = 0.015;
+        std::vector<glm::vec3> colors = {
+            { 1.0f, 0.0f, 0.0f },   // 红色 - Red
+            { 0.0f, 1.0f, 0.0f },   // 绿色 - Green
+            { 0.0f, 0.0f, 1.0f },   // 蓝色 - Blue
+            { 1.0f, 1.0f, 0.0f },   // 黄色 - Yellow
+            { 1.0f, 0.0f, 1.0f },   // 品红 - Magenta
+            { 0.0f, 1.0f, 1.0f },   // 青色 - Cyan
+            { 1.0f, 0.5f, 0.0f },   // 橙色 - Orange
+            { 0.5f, 0.0f, 1.0f },   // 紫色 - Purple
+            { 0.0f, 1.0f, 0.5f },   // 青绿 - Teal
+            { 1.0f, 0.5f, 0.5f },   // 粉红 - Pink
+            { 0.5f, 1.0f, 0.0f },   // 黄绿 - Lime
+            { 0.0f, 0.5f, 1.0f },   // 天蓝 - Sky Blue
+            { 1.0f, 0.0f, 0.5f },   // 玫红 - Rose
+            { 0.5f, 0.5f, 1.0f },   // 淡紫 - Lavender
+            { 1.0f, 1.0f, 0.5f },   // 浅黄 - Light Yellow
+            { 0.5f, 1.0f, 1.0f },   // 淡青 - Light Cyan
+        };
+
+        MD_CORE_ASSERT(candidateHandles.size() <= 16);
+        for (size_t i : selectedHandlesIndices)
+        {
+            // Show selected vertices.
+            std::vector<glm::vec3> vertPos = { m_PsMesh->vertices[candidateHandles[i]]};
+            std::vector<std::array<size_t, 2>> vertInd;
+            polyscope::SurfaceGraphQuantity* showVerts = m_PsMesh->addSurfaceGraphQuantity("Selected Handles (" + std::to_string(i) + ")", vertPos, vertInd);
+            showVerts->setEnabled(true);
+            showVerts->setRadius(vertexRadius);
+            showVerts->setColor(colors[i]);
+        }
     }
 
     void Model::RemoveMeshFromPolyscope()
@@ -94,6 +153,24 @@ namespace MeshDef {
 
         m_PsMesh->remove();
         m_PsMesh = nullptr;
+    }
+
+    void Model::RenderMultiViewImages(glm::vec2 imageSize, const MultiViewCameras& cameras, const std::string& outputDir)
+    {
+        std::filesystem::create_directories(outputDir);
+        for (int i = 0; i < cameras.viewMatrices.size(); i++)
+        {
+            std::vector<glm::vec4> image = polyscope::renderMeshImage(m_PsMesh, cameras.viewMatrices[i], cameras.projMatrix, imageSize);
+            unsigned char* buffer = new unsigned char[imageSize.x * imageSize.y * 4];
+            for (size_t i = 0; i < image.size(); ++i) {
+                buffer[i * 4 + 0] = static_cast<unsigned char>(glm::clamp(image[i].r, 0.0f, 1.0f) * 255.0f); // R
+                buffer[i * 4 + 1] = static_cast<unsigned char>(glm::clamp(image[i].g, 0.0f, 1.0f) * 255.0f); // G
+                buffer[i * 4 + 2] = static_cast<unsigned char>(glm::clamp(image[i].b, 0.0f, 1.0f) * 255.0f); // B
+                buffer[i * 4 + 3] = static_cast<unsigned char>(glm::clamp(image[i].a, 0.0f, 1.0f) * 255.0f); // A
+            }
+            polyscope::saveImage(outputDir + std::to_string(i) + ".png", buffer, imageSize.x, imageSize.y, 4);
+            delete[] buffer;
+        }
     }
 
 } // namespace MeshDef

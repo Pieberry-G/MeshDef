@@ -4,76 +4,82 @@
 #include "Mesh/EditMesh.h"
 #include "Mesh/OBJLoader.h"
 
-#include "Eigen/Dense"
+#include "PlatformUtils/PythonInterpreter.h"
 
-#include "glad/glad.h"
+#include <glad/glad.h>
+
+#include <Eigen/Dense>
+
+#include <ConeOptimization.h>
+#include <MeshDefinition.h>
  
 namespace MeshDef {
 
-    glm::mat4 Orthographic(float right, float left, float top, float bottom, float zNear, float zFar)
+    static void saveCones(const std::vector<double>& conesK, std::string conesPath, Mesh& mesh, double eps = 1e-9)
     {
-        if (left == 0.0f) { left = -right; }
-        if (top == 0.0f) { top = right; }
-        if (bottom == 0.0f) { bottom = -top; }
+        std::ofstream conesFile(conesPath);
+        if (conesFile.fail())
+        {
+            std::cout << "Open " << conesPath << "failed\n";
+            exit(EXIT_FAILURE);
+        }
+
+        for (int i = 0; i < conesK.size(); ++i)
+        {
+            if ((conesK[i] > -eps && conesK[i] < eps)||mesh.is_boundary(mesh.vertex_handle(i))) continue;
+            conesFile << i + 1 << " " << conesK[i] << std::endl;
+        }
+        conesFile.close();
+    }
+
+    std::vector<size_t> CalculateCandidateHandles(const std::vector<std::array<double, 3>>& vertices, const std::vector<std::array<int, 3>>& faces)
+    {
+        Mesh mesh;
+        MeshTools::CreateMesh(mesh, vertices, faces);
+
+        for (float distortion = 0.1f; distortion < 1.0f; distortion += 0.1f)
+        {
+            ConeOptimization ConeOpt;
+            ConeOpt.Initialization(mesh, distortion);
+            ConeOpt.Optimization();
+            // saveCones(ConeOpt.kc, "-cones.txt", mesh);
+
+            double eps = 1e-9;
+            std::vector<size_t> candidateHandles;
+            for (int i = 0; i < ConeOpt.kc.size(); ++i)
+            {
+                if ((ConeOpt.kc[i] > -eps && ConeOpt.kc[i] < eps) || mesh.is_boundary(mesh.vertex_handle(i))) continue;
+                candidateHandles.push_back(i);
+            }
+            
+            if (candidateHandles.size() <= 16) return candidateHandles;
+        }
+    }
+
+    std::vector<size_t> SelectHandlesByVLM(const std::string& imagesDir)
+    {
+        pybind11::object result = pybind11::module_::import("handle_selection").attr("select_handles")(imagesDir);
         
-        return glm::ortho(left, right, bottom, top, zNear, zFar);
-    }
-
-    glm::mat4 Perspective(float fovy, float aspect, float zNear, float zFar)
-    {
-        return glm::perspective(fovy, aspect, zNear, zFar);
-    }
-
-    std::vector<glm::mat4> Views(float distance, float right, std::vector<int> angles)
-    {
-        if (right == 0.0f) { right = 1.0f / distance; }
-
-        if (angles.empty())
-        {
-            angles = { 0, -45, -90, 180, 90, 45 };
-        }
-
-        std::vector<glm::mat4> views(angles.size(), glm::mat4(1.0f));
-
-        for (int i = 0; i < views.size(); i++)
-        {
-            glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians((float)angles[i]), glm::vec3(0.0f, 1.0f, 0.0f));
-            glm::mat4 translation = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -distance));
-            views[i] = translation * rotation;
-        }
-        
-        return views;
-    }
-
-
-    void MakeCameras(std::vector<glm::mat4>& viewMatrices, glm::mat4& projMatrix, const std::string& camType, const std::vector<int>& angles)
-    {
-        if (camType == "ortho")
-        {
-            float distance = 10.0f;
-            float right = 1.0f;
-            viewMatrices = Views(distance, right, angles);
-            projMatrix = Orthographic(1.0f);
-        }
-        else
-        {
-            float distance = 1 / glm::tan(glm::radians(49.13f) / 2.0);
-            float right = 1.0f;
-            viewMatrices = Views(distance, right, angles);
-            projMatrix = Perspective();
-        }
-    }
+        std::vector<size_t> selectedHandlesIndex;
+        std::istringstream iss(result.cast<std::string>());
+        std::string token;
     
+        while (std::getline(iss, token, ','))
+        {
+            selectedHandlesIndex.push_back(std::stoull(token));
+        }
+        return selectedHandlesIndex;
+    }
 
-    bool VertInsideSelectBox (const Eigen::Vector3d &botLeftOrigin,
-                                        const Eigen::Vector3d &pointOnBotLeftRay,
-                                        const Eigen::Vector3d &botRightOrigin,
-                                        const Eigen::Vector3d &pointOnBotRightRay,
-                                        const Eigen::Vector3d &topRightOrigin,
-                                        const Eigen::Vector3d &pointOnTopRightRay,
-                                        const Eigen::Vector3d &topLeftOrigin,
-                                        const Eigen::Vector3d &pointOnTopLeftRay,
-                                        Eigen::Vector3d vertex)
+    bool VertInsideSelectBox(const Eigen::Vector3d &botLeftOrigin,
+                             const Eigen::Vector3d &pointOnBotLeftRay,
+                             const Eigen::Vector3d &botRightOrigin,
+                             const Eigen::Vector3d &pointOnBotRightRay,
+                             const Eigen::Vector3d &topRightOrigin,
+                             const Eigen::Vector3d &pointOnTopRightRay,
+                             const Eigen::Vector3d &topLeftOrigin,
+                             const Eigen::Vector3d &pointOnTopLeftRay,
+                             Eigen::Vector3d vertex)
     {
         Eigen::Vector3d ray, tmp, normalLeft, normalRight, normalBot, normalTop;
         ray  = pointOnBotLeftRay - botLeftOrigin;

@@ -2,7 +2,7 @@
 
 #include "Core/Application.h"
 #include "Core/Scene.h"
-#include "Core/WindowsPlatformUtils.h"
+#include "PlatformUtils/WindowsPlatformUtils.h"
 
 #include <polyscope/polyscope.h>
 #include <imgui.h>
